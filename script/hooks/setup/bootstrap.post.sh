@@ -15,7 +15,7 @@ else
 
     log_header "Verifying Nutri Points API contract ${contract_version}"
     gh release download "${contract_tag}" \
-        --repo megageek/nutripoints \
+        --repo megageek/nutripoints-homeassistant \
         --pattern "${contract_asset}" --pattern SHA256SUMS \
         --dir "${contract_temp_dir}"
     (

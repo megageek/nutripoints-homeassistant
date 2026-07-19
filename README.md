@@ -38,7 +38,7 @@ Open the repository in its Dev Container, then use the provided scripts:
 ./script/hassfest
 ```
 
-Tests use `pytest-homeassistant-custom-component` and the versioned `nutripoints-api-contracts` wheel published as an immutable release asset by the server repository. Contract updates are proposed by Renovate and always require review.
+Tests use `pytest-homeassistant-custom-component` and the versioned `nutripoints-api-contracts` wheel built by the server repository and distributed as an immutable release asset from this public repository. Contract updates are proposed by Renovate and always require review.
 
 See [architecture](docs/development/ARCHITECTURE.md), [configuration](docs/user/CONFIGURATION.md), and [release process](docs/development/RELEASE.md) for details.
 

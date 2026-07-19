@@ -12,7 +12,7 @@
   ],
   "packageRules": [
     {
-      "matchDepNames": ["megageek/nutripoints"],
+      "matchDepNames": ["megageek/nutripoints-homeassistant"],
       "addLabels": ["contract-update"],
       "automerge": false
     }
