@@ -7,6 +7,7 @@ from .client import (
     NutriPointsContractError,
     NutriPointsHttpApiKeyForbiddenError,
     NutriPointsInvalidHostError,
+    NutriPointsReplayGapError,
     NutriPointsTlsError,
     NutriPointsUnexpectedServerError,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "NutriPointsContractError",
     "NutriPointsHttpApiKeyForbiddenError",
     "NutriPointsInvalidHostError",
+    "NutriPointsReplayGapError",
     "NutriPointsTlsError",
     "NutriPointsUnexpectedServerError",
 ]

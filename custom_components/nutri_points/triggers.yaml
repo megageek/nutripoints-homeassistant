@@ -1,0 +1,43 @@
+food_logged:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: nutri_points
+    trigger_action:
+      selector:
+        select:
+          options:
+            - any
+            - food_log_created
+            - food_item_logged
+            - saved_meal_logged
+            - recipe_logged
+            - recipe_batch_logged
+    meal_type:
+      selector:
+        select:
+          options: [any, breakfast, lunch, dinner, snack]
+weigh_in_summary_generated:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: nutri_points
+    trigger_action:
+      selector:
+        select:
+          options: [any, weight_log_created, weight_log_updated]
+recipe_batch_label_requested:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: nutri_points
+    trigger_action:
+      selector:
+        select:
+          options: [any, recipe_batch_created, recipe_batch_reprinted]

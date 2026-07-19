@@ -20,12 +20,14 @@ When migrating from the component previously bundled in the Nutri Points server 
 
 - Polls the current day, readiness, weight overview, and drink totals.
 - Uses the authenticated Nutri Points SSE stream for immediate refresh triggers.
+- Provides filterable automation triggers for food logs, weigh-in summaries, and recipe-batch label requests on `stable-rw-v4` servers.
+- Persists the last durable event ID per config entry and replays missed events after reconnect. If server retention has elapsed, a Repair identifies the gap before the integration resumes.
 - Falls back to polling automatically while the stream is disconnected.
 - Exposes point, drink, weight, planning, budget, and weigh-in entities.
 - Reports persistent authentication, host, network-policy, contract, and transport failures through Repairs.
 - Registers `log_food`, `log_activity`, `log_drink`, `log_weight`, and `set_steps` actions under the `nutri_points` domain.
 
-The integration supports Nutri Points contract generations `stable-rw-v1`, `stable-rw-v2`, and `stable-rw-v3`. Unknown generations are rejected during setup so incompatible data cannot silently reach automations.
+The integration supports Nutri Points contract generations `stable-rw-v1` through `stable-rw-v4`. Unknown generations are rejected during setup so incompatible data cannot silently reach automations. Custom automation triggers require the `ha_automation_events_v1` capability introduced by `stable-rw-v4`; older servers continue to provide the existing entities and actions.
 
 ## Development
 

@@ -43,6 +43,14 @@ class NutriPointsContractError(NutriPointsApiError):
     """Raised when runtime contract is incompatible."""
 
 
+class NutriPointsReplayGapError(NutriPointsApiError):
+    """Raised when the durable SSE cursor is outside server retention."""
+
+    def __init__(self, latest_event_id: int | None) -> None:
+        super().__init__("Nutri Points automation event history has a replay gap.")
+        self.latest_event_id = latest_event_id
+
+
 class NutriPointsInvalidHostError(NutriPointsApiError):
     """Raised when the Nutri Points server rejects the request Host header."""
 
@@ -234,36 +242,51 @@ class NutriPointsApiClient:
         self,
         *,
         on_connect: Callable[[], Awaitable[None]] | None = None,
-    ) -> AsyncIterator[tuple[str, dict[str, Any]]]:
+        last_event_id: int | None = None,
+    ) -> AsyncIterator[tuple[str | None, str, dict[str, Any]]]:
         url = f"{self._base_url}{HA_EVENTS_ENDPOINT}"
         try:
+            headers = self._headers(with_idempotency=False)
+            if last_event_id is not None:
+                headers["Last-Event-ID"] = str(last_event_id)
             async with self._session.request(
                 "GET",
                 url,
-                headers=self._headers(with_idempotency=False),
+                headers=headers,
                 ssl=self._verify_ssl,
                 timeout=None,
             ) as response:
                 if response.status == 401:
                     raise NutriPointsAuthError("Authentication failed with the provided API key.")
+                if response.status == 409:
+                    payload = await response.json()
+                    detail = payload.get("detail", {}) if isinstance(payload, dict) else {}
+                    if isinstance(detail, dict) and detail.get("error_code") == "integration_event_replay_gap":
+                        latest = detail.get("latest_available_event_id")
+                        raise NutriPointsReplayGapError(latest if isinstance(latest, int) else None)
                 response.raise_for_status()
                 if on_connect is not None:
                     await on_connect()
 
                 event_name: str | None = None
+                event_id: str | None = None
                 event_payload: dict[str, Any] = {}
                 async for raw_chunk in response.content:
                     line = raw_chunk.decode("utf-8").strip()
                     if not line:
                         if event_name is not None:
-                            yield event_name, event_payload
+                            yield event_id, event_name, event_payload
                         event_name = None
+                        event_id = None
                         event_payload = {}
                         continue
                     if line.startswith(":"):
                         continue
                     if line.startswith("event:"):
                         event_name = line.partition(":")[2].strip()
+                        continue
+                    if line.startswith("id:"):
+                        event_id = line.partition(":")[2].strip() or None
                         continue
                     if line.startswith("data:"):
                         raw_payload = line.partition(":")[2].strip()

@@ -33,7 +33,19 @@ STEPS_LOG_ENDPOINT = "/api/v1/logs/steps"
 
 # Keep Home Assistant compatible with adjacent stable server generations so it can
 # talk to production while development moves forward.
-SUPPORTED_API_CONTRACT_TAGS = ("stable-rw-v1", "stable-rw-v2", "stable-rw-v3")
+SUPPORTED_API_CONTRACT_TAGS = ("stable-rw-v1", "stable-rw-v2", "stable-rw-v3", "stable-rw-v4")
+
+AUTOMATION_EVENTS_CAPABILITY = "ha_automation_events_v1"
+AUTOMATION_EVENT_NAMES = (
+    "meal_food_logged",
+    "weigh_in_summary_generated",
+    "recipe_batch_label_requested",
+)
+
+
+def automation_event_signal(entry_id: str) -> str:
+    return f"{DOMAIN}_{entry_id}_automation_event"
+
 
 SERVICE_LOG_FOOD = "log_food"
 SERVICE_LOG_ACTIVITY = "log_activity"

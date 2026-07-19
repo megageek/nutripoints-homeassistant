@@ -48,10 +48,10 @@ async def test_stream_refreshes_on_connect_and_known_events() -> None:
     coordinator = FakeCoordinator()
 
     class Api:
-        async def async_stream_home_assistant_events(self, *, on_connect=None):
+        async def async_stream_home_assistant_events(self, *, on_connect=None, last_event_id=None):
             await on_connect()
             for event in ("readiness_changed", "weight_overview_changed", "unknown"):
-                yield event, {}
+                yield None, event, {}
             refreshed.set()
 
     listener = NutriPointsEventStreamListener(
@@ -81,14 +81,14 @@ async def test_stream_records_api_failure_before_reconnect(monkeypatch) -> None:
     class Api:
         calls = 0
 
-        async def async_stream_home_assistant_events(self, *, on_connect=None):
+        async def async_stream_home_assistant_events(self, *, on_connect=None, last_event_id=None):
             self.calls += 1
             if self.calls == 1:
                 raise NutriPointsApiError("temporary")
             await on_connect()
             refreshed.set()
             if False:
-                yield "day_status_changed", {}
+                yield None, "day_status_changed", {}
 
     listener = NutriPointsEventStreamListener(
         api_client=Api(),

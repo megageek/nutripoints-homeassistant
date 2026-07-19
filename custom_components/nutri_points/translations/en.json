@@ -65,6 +65,10 @@
     }
   },
   "issues": {
+    "automation_replay_gap": {
+      "title": "Some Nutri Points automation events could not be replayed",
+      "description": "Home Assistant was disconnected longer than the Nutri Points event retention window. The integration resumed from the newest available position; review Nutri Points for actions that may have been missed."
+    },
     "runtime_invalid_auth": {
       "title": "Nutri Points API key is no longer accepted",
       "description": "Nutri Points rejected the configured API key during runtime. Create or copy a valid API key in Nutri Points Settings and update the Home Assistant integration entry."

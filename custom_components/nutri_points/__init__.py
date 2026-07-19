@@ -12,7 +12,15 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import NutriPointsApiClient
-from .const import CONF_API_KEY, CONF_BASE_URL, CONF_POLL_INTERVAL_SECONDS, CONF_VERIFY_SSL, DOMAIN, PLATFORMS
+from .const import (
+    AUTOMATION_EVENTS_CAPABILITY,
+    CONF_API_KEY,
+    CONF_BASE_URL,
+    CONF_POLL_INTERVAL_SECONDS,
+    CONF_VERIFY_SSL,
+    DOMAIN,
+    PLATFORMS,
+)
 from .coordinator import NutriPointsDataUpdateCoordinator, NutriPointsEventStreamListener
 from .service_actions import _register_services, _unregister_services
 
@@ -41,6 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         api_key=entry.data[CONF_API_KEY],
         verify_ssl=entry.data.get(CONF_VERIFY_SSL, True),
     )
+    runtime = await api_client.async_validate_runtime()
     coordinator = NutriPointsDataUpdateCoordinator(
         hass,
         api_client=api_client,
@@ -54,12 +63,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator=coordinator,
         on_day_status_changed=coordinator.async_request_refresh,
         logger=_LOGGER,
+        hass=hass,
+        entry_id=entry.entry_id,
     )
     listener.start()
     hass.data[DOMAIN]["entries"][entry.entry_id] = {
         "api_client": api_client,
         "coordinator": coordinator,
         "listener": listener,
+        "automation_events_supported": AUTOMATION_EVENTS_CAPABILITY in runtime.get("capabilities", []),
     }
     entry.async_on_unload(entry.add_update_listener(_async_handle_entry_update))
 
