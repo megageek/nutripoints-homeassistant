@@ -3,7 +3,7 @@
 set -euo pipefail
 
 contract_version=$(tail -n 1 contract-version.txt)
-contract_tag="api-contract-v${contract_version}"
+contract_tag="v${contract_version}"
 contract_asset="nutripoints_api_contracts-${contract_version}-py3-none-any.whl"
 
 if [[ -n ${NUTRIPOINTS_CONTRACT_WHEEL:-} ]]; then
