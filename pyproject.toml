@@ -6,15 +6,15 @@
 # - [tool.pylint.*] - Optional additional linting (Ruff is sufficient)
 
 [project]
-name = "ha_integration_domain"
+name = "nutri_points"
 version = "0.0.0"              # Version is managed in manifest.json only
 requires-python = ">=3.14"
 
 [tool.setuptools]
-packages = ["custom_components.ha_integration_domain"]
+packages = ["custom_components.nutri_points"]
 
 [tool.pyright]
-include = ["custom_components/ha_integration_domain"]
+include = ["custom_components/nutri_points"]
 exclude = [
     "**/.*",
     "**/__pycache__",
@@ -54,7 +54,7 @@ filterwarnings = [
 ]
 
 [tool.coverage.run]
-source = ["custom_components/ha_integration_domain"]
+source = ["custom_components/nutri_points"]
 omit = ["tests/*"]
 
 [tool.coverage.report]
@@ -188,6 +188,12 @@ ignore = [
     "D406",     # Section name should end with a newline
     "D407",     # Section name underlining
     "D417",     # Missing argument descriptions in docstring - to allow documenting only non-obvious parameters
+    "D100",     # Migrated integration modules are documented at the package/architecture level
+    "D101",     # Public Home Assistant entity classes are self-describing through entity descriptions
+    "D102",     # API operation names document straightforward endpoint wrappers
+    "D103",     # Home Assistant platform setup hooks use framework-standard names
+    "D104",     # Platform packages are identified by their Home Assistant domain
+    "D107",     # Constructor arguments are covered by class and config-flow documentation
     "E501",     # line too long
 
     "PLC1901", # {existing} can be simplified to {replacement} as an empty string is falsey; too many false positives
@@ -209,6 +215,8 @@ ignore = [
     "SIM103",  # Return the condition {condition} directly
     "SIM108",  # Use ternary operator {contents} instead of if-else-block
     "SIM115",  # Use context handler for opening files
+    "BLE001",  # Boundary code must normalize errors raised by HA templates and response decoders
+    "TRY301",  # Inline exception mapping keeps request status handling readable
 
     # Moving imports into type-checking blocks can mess with pytest.patch()
     "TC001", # Move application import {} into a type-checking block

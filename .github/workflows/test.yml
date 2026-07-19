@@ -1,0 +1,39 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8
+        with:
+          version: "0.9.3"
+          enable-cache: true
+
+      - name: Bootstrap Home Assistant test environment
+        run: ./script/setup/bootstrap
+
+      - name: Run integration tests with coverage
+        # The extracted legacy component starts at 44%; keep CI above a stable
+        # floor and raise this ratchet as behavior-focused tests are added.
+        run: ./script/test --cov --cov-fail-under=40

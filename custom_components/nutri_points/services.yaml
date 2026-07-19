@@ -1,0 +1,212 @@
+log_food:
+  name: Log food
+  description: Create a food log entry in Nutri Points.
+  fields:
+    entry_id:
+      name: Entry id
+      description: Optional config entry id when multiple Nutri Points instances are configured.
+      required: false
+      selector:
+        text:
+    name:
+      name: Name
+      description: Food name. Supports templates.
+      required: true
+      selector:
+        text:
+    protein_g:
+      name: Protein grams
+      description: Required for macro entries. Supports templates.
+      required: false
+      selector:
+        text:
+    carbs_g:
+      name: Carbohydrate grams
+      description: Required for macro entries. Supports templates.
+      required: false
+      selector:
+        text:
+    fat_g:
+      name: Fat grams
+      description: Required for macro entries. Supports templates.
+      required: false
+      selector:
+        text:
+    fiber_g:
+      name: Fiber grams
+      description: Required for macro entries. Supports templates.
+      required: false
+      selector:
+        text:
+    nutrition_entry_mode:
+      name: Nutrition entry mode
+      description: macros uses protein/carbs/fat/fiber, calories uses calories_kcal, points uses points.
+      required: false
+      selector:
+        select:
+          options:
+            - macros
+            - calories
+            - points
+    calories_kcal:
+      name: Calories
+      description: Required for calories entries. Supports templates.
+      required: false
+      selector:
+        text:
+    points:
+      name: Points
+      description: Required for points entries. Supports templates.
+      required: false
+      selector:
+        text:
+    meal_type:
+      name: Meal type
+      description: Optional. Supports templates.
+      required: false
+      selector:
+        text:
+    applies_to_date:
+      name: Applies-to date
+      description: Optional YYYY-MM-DD. Supports templates. Omit to let Nutri server timezone choose today.
+      required: false
+      selector:
+        text:
+    logged_at:
+      name: Logged at
+      description: Optional ISO timestamp. Supports templates.
+      required: false
+      selector:
+        text:
+
+log_activity:
+  name: Log activity
+  description: Create an activity log entry in Nutri Points.
+  fields:
+    entry_id:
+      name: Entry id
+      required: false
+      selector:
+        text:
+    kcal:
+      name: Calories burned
+      description: Supports templates.
+      required: true
+      selector:
+        text:
+    applies_to_date:
+      name: Applies-to date
+      description: Optional YYYY-MM-DD. Supports templates.
+      required: false
+      selector:
+        text:
+    logged_at:
+      name: Logged at
+      description: Optional ISO timestamp. Supports templates.
+      required: false
+      selector:
+        text:
+
+log_drink:
+  name: Log drink
+  description: Create a drink log entry in Nutri Points.
+  fields:
+    entry_id:
+      name: Entry id
+      required: false
+      selector:
+        text:
+    drink_type_id:
+      name: Drink type id
+      description: Optional numeric drink type id. Supports templates. Provide this or drink_type_name.
+      required: false
+      selector:
+        text:
+    drink_type_name:
+      name: Drink type name
+      description: Optional drink type name. Supports templates. Provide this or drink_type_id.
+      required: false
+      selector:
+        text:
+    volume_ml:
+      name: Volume (ml)
+      description: Signed integer milliliters. Supports templates. Positive adds, negative deducts.
+      required: true
+      selector:
+        text:
+    preset_id:
+      name: Preset id
+      description: Optional preset id for metadata only. Supports templates.
+      required: false
+      selector:
+        text:
+    applies_to_date:
+      name: Applies-to date
+      description: Optional YYYY-MM-DD. Supports templates.
+      required: false
+      selector:
+        text:
+    logged_at:
+      name: Logged at
+      description: Optional ISO timestamp. Supports templates.
+      required: false
+      selector:
+        text:
+
+log_weight:
+  name: Log weight
+  description: Create a weight log entry in Nutri Points.
+  fields:
+    entry_id:
+      name: Entry id
+      required: false
+      selector:
+        text:
+    weight_kg:
+      name: Weight (kg)
+      description: Supports templates.
+      required: true
+      selector:
+        text:
+    applies_to_date:
+      name: Applies-to date
+      description: Optional YYYY-MM-DD. Supports templates.
+      required: false
+      selector:
+        text:
+    logged_at:
+      name: Logged at
+      description: Optional ISO timestamp. Supports templates.
+      required: false
+      selector:
+        text:
+
+set_steps:
+  name: Set steps
+  description: Upsert a daily step total in Nutri Points.
+  fields:
+    entry_id:
+      name: Entry id
+      required: false
+      selector:
+        text:
+    steps:
+      name: Steps
+      description: Supports templates.
+      required: true
+      selector:
+        text:
+    mode:
+      name: Update mode
+      required: false
+      selector:
+        select:
+          options:
+            - replace_total
+            - add_delta
+    applies_to_date:
+      name: Applies-to date
+      description: Optional YYYY-MM-DD. Supports templates.
+      required: false
+      selector:
+        text:

@@ -1,0 +1,89 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Nutri Points",
+        "description": "Configure Nutri Points API access for Home Assistant.",
+        "data": {
+          "base_url": "Base URL",
+          "api_key": "API key",
+          "poll_interval_seconds": "Poll interval seconds",
+          "low_points_threshold": "Low points threshold",
+          "verify_ssl": "Verify TLS certificates"
+        },
+        "data_description": {
+          "base_url": "Use the full Nutri Points base URL with http:// or https:// and no extra path.",
+          "api_key": "Create an API key in Nutri Points Settings and paste it here.",
+          "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Nutri Points.",
+      "invalid_auth": "API key is invalid.",
+      "invalid_url": "Base URL must be a full http:// or https:// URL with no extra path, query, or fragment.",
+      "invalid_host": "Nutri Points rejected the Host header. Add the configured hostname or IP to TRUSTED_HOSTS.",
+      "http_api_key_forbidden": "HTTP API key access is blocked for Home Assistant. Add its network to API_KEY_HTTP_ALLOWED_CIDRS.",
+      "tls_failed": "TLS verification failed. Fix the server certificate or disable TLS verification only if you trust the server.",
+      "unexpected_server": "Connected server did not behave like a Nutri Points API. Check the URL and reverse-proxy target.",
+      "incompatible_contract": "Nutri Points API contract is not compatible.",
+      "invalid_input": "Invalid input provided."
+    },
+    "abort": {
+      "already_configured": "This Nutri Points server is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nutri Points options",
+        "data": {
+          "base_url": "Base URL",
+          "api_key": "Replacement API key (optional)",
+          "poll_interval_seconds": "Poll interval seconds",
+          "low_points_threshold": "Low points threshold",
+          "verify_ssl": "Verify TLS certificates"
+        },
+        "data_description": {
+          "base_url": "Update the Nutri Points server URL in place. Use the full http:// or https:// URL with no extra path.",
+          "api_key": "Leave blank to keep the current stored API key. Enter a new key only when rotating or replacing it.",
+          "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Nutri Points.",
+      "invalid_auth": "API key is invalid.",
+      "invalid_url": "Base URL must be a full http:// or https:// URL with no extra path, query, or fragment.",
+      "invalid_host": "Nutri Points rejected the Host header. Add the configured hostname or IP to TRUSTED_HOSTS.",
+      "http_api_key_forbidden": "HTTP API key access is blocked for Home Assistant. Add its network to API_KEY_HTTP_ALLOWED_CIDRS.",
+      "tls_failed": "TLS verification failed. Fix the server certificate or disable TLS verification only if you trust the server.",
+      "unexpected_server": "Connected server did not behave like a Nutri Points API. Check the URL and reverse-proxy target.",
+      "incompatible_contract": "Nutri Points API contract is not compatible.",
+      "already_configured": "Another Nutri Points entry already uses that base URL.",
+      "invalid_input": "Invalid input provided."
+    }
+  },
+  "issues": {
+    "runtime_invalid_auth": {
+      "title": "Nutri Points API key is no longer accepted",
+      "description": "Nutri Points rejected the configured API key during runtime. Create or copy a valid API key in Nutri Points Settings and update the Home Assistant integration entry."
+    },
+    "runtime_invalid_host": {
+      "title": "Nutri Points rejected the Home Assistant host",
+      "description": "Nutri Points rejected the request Host header. Add the Home Assistant hostname or IP to `TRUSTED_HOSTS`, then reload the integration."
+    },
+    "runtime_http_api_key_forbidden": {
+      "title": "Nutri Points blocked Home Assistant API-key access",
+      "description": "Nutri Points allows API-key HTTP access only from configured networks. Add the Home Assistant network to `API_KEY_HTTP_ALLOWED_CIDRS`, then reload the integration."
+    },
+    "runtime_incompatible_contract": {
+      "title": "Nutri Points API contract is incompatible",
+      "description": "The connected Nutri Points server no longer matches the Home Assistant integration contract support window. Upgrade Nutri Points or the custom component so their supported contract generations overlap."
+    },
+    "runtime_transient_transport": {
+      "title": "Nutri Points has repeated connection failures",
+      "description": "Home Assistant has hit repeated runtime connection failures while talking to Nutri Points. Check that the Nutri Points server is reachable, then confirm the integration recovers after connectivity is restored."
+    }
+  }
+}
