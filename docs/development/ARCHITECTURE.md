@@ -21,7 +21,7 @@ The server repository publishes `nutripoints-api-contracts` as an immutable GitH
 
 The wheel is a development and test dependency only. It must not be added to `manifest.json`, imported by runtime integration code, or used to share server implementation logic.
 
-`contract-version.txt` pins the tested artifact. The private server repository builds the wheel; this public repository distributes it under `api-contract-v*` releases so forks and public CI can fetch it. Renovate proposes updates, and CI verifies the release checksum before installation. An update is merged only after the full generation matrix passes.
+`contract-version.txt` pins the tested artifact. The private server repository synchronizes validated source to the public `megageek/nutripoints-api-contracts` repository, which builds immutable `v*` releases so forks and public CI can fetch them without exposing server source. Renovate proposes updates, and CI verifies the release checksum before installation. An update is merged only after the full generation matrix passes.
 
 ## Compatibility rules
 
