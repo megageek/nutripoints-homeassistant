@@ -11,7 +11,7 @@ Development dependencies are installed by `script/setup/bootstrap`:
 - `nutripoints-api-contracts`, downloaded from the pinned, immutable Nutri Points
   GitHub release in `contract-version.txt`
 
-The bootstrap hook verifies the release and wheel attestation before installation.
+The bootstrap hook verifies the wheel against the release's SHA-256 manifest before installation.
 For local cross-repository development, set `NUTRIPOINTS_CONTRACT_WHEEL` to a wheel
 built from the Nutri Points repository. Runtime code does not import this package;
 it supplies versioned fixtures and schemas to the test suite.

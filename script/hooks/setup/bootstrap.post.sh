@@ -14,11 +14,13 @@ else
     trap 'rm -rf "${contract_temp_dir}"' EXIT
 
     log_header "Verifying Nutri Points API contract ${contract_version}"
-    gh release verify "${contract_tag}" --repo megageek/nutripoints
     gh release download "${contract_tag}" \
         --repo megageek/nutripoints \
-        --pattern "${contract_asset}" \
+        --pattern "${contract_asset}" --pattern SHA256SUMS \
         --dir "${contract_temp_dir}"
-    gh release verify-asset "${contract_tag}" "${contract_temp_dir}/${contract_asset}" --repo megageek/nutripoints
+    (
+        cd "${contract_temp_dir}"
+        sha256sum --check --strict SHA256SUMS
+    )
     uv pip install "${contract_temp_dir}/${contract_asset}"
 fi
