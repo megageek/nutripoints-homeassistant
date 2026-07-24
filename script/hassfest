@@ -13,6 +13,7 @@
 #
 # Options:
 #   --update             Force update HA Core to match installed version
+#   --no-update          Reuse the cached Home Assistant Core checkout
 #   --skip-plugins LIST  Comma-separated list of plugins to skip
 #                        Default: quality_scale,requirements
 #
@@ -31,6 +32,13 @@ source "$SCRIPT_DIR/.lib/output.sh"
 source "$SCRIPT_DIR/.lib/ha_version.sh"
 # shellcheck source=script/.lib/integration.sh
 source "$SCRIPT_DIR/.lib/integration.sh"
+
+activate_venv
+
+PYTHON_BIN="$(command -v python3)"
+if [[ -n ${VIRTUAL_ENV:-} && -x "$VIRTUAL_ENV/bin/python" ]]; then
+    PYTHON_BIN="$VIRTUAL_ENV/bin/python"
+fi
 
 # Configuration
 # In DevContainer/Codespaces: clone to $HOME/.local/ha-core (Container FS, off bind mount)
@@ -74,9 +82,9 @@ if [ -n "${HA_VERSION:-}" ]; then
         log_error "Could not resolve HA version '${HA_VERSION}' from PyPI"
         exit 1
     fi
-elif command -v python3 >/dev/null 2>&1; then
+elif [[ -x $PYTHON_BIN ]]; then
     # Detect from installed homeassistant package
-    HA_VERSION_TAG=$(python3 -c "from homeassistant.const import __version__; print(__version__)" 2>/dev/null || true)
+    HA_VERSION_TAG=$("$PYTHON_BIN" -c "from homeassistant.const import __version__; print(__version__)" 2>/dev/null || true)
     if [ -z "$HA_VERSION_TAG" ]; then
         log_error "Home Assistant is not installed — cannot determine version for hassfest"
         log_info "Run: ./script/setup/bootstrap"
@@ -95,6 +103,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
     --update)
         UPDATE_CORE=true
+        shift
+        ;;
+    --no-update)
+        UPDATE_CORE=false
         shift
         ;;
     --skip-plugins)
@@ -152,25 +164,9 @@ else
     fi
 fi
 
-# Activate virtual environment
-if [[ -z ${VIRTUAL_ENV:-} ]]; then
-    log_info "Activating virtual environment"
-    # shellcheck source=/dev/null
-    if [[ -f "$HOME/ha-venv/bin/activate" ]]; then
-        source "$HOME/ha-venv/bin/activate"
-    elif [[ -f "$PWD/.local/ha-venv/bin/activate" ]]; then
-        source "$PWD/.local/ha-venv/bin/activate"
-    elif [[ -f "$HOME/.local/ha-venv/bin/activate" ]]; then
-        source "$HOME/.local/ha-venv/bin/activate"
-    else
-        log_error "Virtual environment not found. Run: script/setup/bootstrap"
-        exit 1
-    fi
-fi
-
 # Check if we have required dependencies
 log_info "Checking dependencies..."
-if ! python3 -c "import voluptuous, awesomeversion, homeassistant.helpers.config_validation" >/dev/null 2>&1; then
+if ! "$PYTHON_BIN" -c "import voluptuous, awesomeversion, homeassistant.helpers.config_validation" >/dev/null 2>&1; then
     log_error "Missing required dependencies (voluptuous, awesomeversion, homeassistant)"
     log_info "Run: ./script/bootstrap"
     exit 1
@@ -184,7 +180,7 @@ export PYTHONPATH="$HA_CORE_ABS:${PYTHONPATH:-}"
 
 # Build hassfest command
 HASSFEST_CMD=(
-    python3 -m script.hassfest
+    "$PYTHON_BIN" -m script.hassfest
     --action validate
     --integration-path "$PWD/$INTEGRATION_PATH"
 )
