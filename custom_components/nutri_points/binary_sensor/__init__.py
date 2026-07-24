@@ -77,8 +77,13 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[NutriBinarySensorDescription, ...] = (
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    coordinator: NutriPointsDataUpdateCoordinator = hass.data[DOMAIN]["entries"][entry.entry_id]["coordinator"]
-    low_points_threshold = int(entry.data.get(CONF_LOW_POINTS_THRESHOLD, DEFAULT_LOW_POINTS_THRESHOLD))
+    coordinator = entry.runtime_data.coordinator
+    low_points_threshold = int(
+        entry.options.get(
+            CONF_LOW_POINTS_THRESHOLD,
+            entry.data.get(CONF_LOW_POINTS_THRESHOLD, DEFAULT_LOW_POINTS_THRESHOLD),
+        )
+    )
     async_add_entities(
         [
             *(

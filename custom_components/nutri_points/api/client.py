@@ -13,6 +13,7 @@ from aiohttp import (
     ClientResponseError,
     ClientSession,
     ClientSSLError,
+    ClientTimeout,
 )
 
 from custom_components.nutri_points.const import (
@@ -144,6 +145,7 @@ class NutriPointsApiClient:
                 headers=self._headers(with_idempotency=with_idempotency),
                 json=payload,
                 ssl=self._verify_ssl,
+                timeout=ClientTimeout(total=30),
             ) as response:
                 if response.status == 401:
                     raise NutriPointsAuthError("Authentication failed with the provided API key.")
@@ -159,7 +161,7 @@ class NutriPointsApiClient:
                 "TLS verification failed while connecting to Nutri Points. Check the server certificate "
                 "or disable TLS verification if appropriate."
             ) from exc
-        except ClientConnectorError as exc:
+        except (TimeoutError, ClientConnectorError) as exc:
             raise NutriPointsApiError(f"Unable to reach Nutri Points API: {exc}") from exc
         except ClientError as exc:
             raise NutriPointsApiError(f"Unable to reach Nutri Points API: {exc}") from exc
@@ -201,6 +203,7 @@ class NutriPointsApiClient:
                 url,
                 headers=self._headers(with_idempotency=False),
                 ssl=self._verify_ssl,
+                timeout=ClientTimeout(total=30),
             ) as response:
                 if response.status == 401:
                     raise NutriPointsAuthError("Authentication failed with the provided API key.")
@@ -227,7 +230,7 @@ class NutriPointsApiClient:
                 "TLS verification failed while connecting to Nutri Points. Check the server certificate "
                 "or disable TLS verification if appropriate."
             ) from exc
-        except ClientConnectorError as exc:
+        except (TimeoutError, ClientConnectorError) as exc:
             raise NutriPointsApiError(f"Unable to reach Nutri Points API: {exc}") from exc
         except ClientError as exc:
             raise NutriPointsApiError(f"Unable to reach Nutri Points API: {exc}") from exc

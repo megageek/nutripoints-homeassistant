@@ -4,10 +4,12 @@ from datetime import UTC, datetime, timedelta
 import logging
 from typing import Any
 
-from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsApiError
+from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsApiError, NutriPointsAuthError
 from custom_components.nutri_points.const import DOMAIN
 from custom_components.nutri_points.repairs import NutriPointsRuntimeIssueTracker
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,13 +22,14 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         *,
         api_client: NutriPointsApiClient,
         poll_interval_seconds: int,
-        entry_id: str,
+        config_entry: ConfigEntry,
     ) -> None:
         super().__init__(
             hass,
             logger=_LOGGER,
             name=DOMAIN,
             update_interval=timedelta(seconds=poll_interval_seconds),
+            config_entry=config_entry,
         )
         self.api_client = api_client
         self.last_error: str | None = None
@@ -41,7 +44,16 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.day_status_available = False
         self.weight_available = False
         self.readiness_available = False
-        self.runtime_issues = NutriPointsRuntimeIssueTracker(hass=hass, entry_id=entry_id)
+        self.poll_runtime_issues = NutriPointsRuntimeIssueTracker(
+            hass=hass,
+            entry_id=config_entry.entry_id,
+            scope="poll",
+        )
+        self.stream_runtime_issues = NutriPointsRuntimeIssueTracker(
+            hass=hass,
+            entry_id=config_entry.entry_id,
+            scope="stream",
+        )
 
     def _utc_now_iso(self) -> str:
         return datetime.now(UTC).isoformat()
@@ -79,14 +91,21 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "weight_available": self.weight_available,
             "readiness_available": self.readiness_available,
         }
-        diagnostics.update(self.runtime_issues.diagnostics())
+        diagnostics.update({f"poll_{key}": value for key, value in self.poll_runtime_issues.diagnostics().items()})
+        diagnostics.update({f"stream_{key}": value for key, value in self.stream_runtime_issues.diagnostics().items()})
         return diagnostics
 
-    def record_runtime_failure(self, exc: Exception) -> None:
-        self.runtime_issues.record_failure(exc)
+    def record_poll_failure(self, exc: Exception) -> None:
+        self.poll_runtime_issues.record_failure(exc)
 
-    def record_runtime_success(self) -> None:
-        self.runtime_issues.record_success()
+    def record_poll_success(self) -> None:
+        self.poll_runtime_issues.record_success()
+
+    def record_stream_failure(self, exc: Exception) -> None:
+        self.stream_runtime_issues.record_failure(exc)
+
+    def record_stream_success(self) -> None:
+        self.stream_runtime_issues.record_success()
 
     def _extract_weight_payload(self, overview: dict[str, Any]) -> dict[str, Any]:
         summary_value = overview.get("summary")
@@ -123,19 +142,29 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data = await self.api_client.async_get_today_status()
             self.last_successful_poll_at = self._utc_now_iso()
             self.day_status_available = True
-            self.record_runtime_success()
+            self.record_poll_success()
+        except NutriPointsAuthError as exc:
+            self.last_error = str(exc)
+            self.day_status_available = False
+            self.weight_available = False
+            self.readiness_available = False
+            self.record_poll_failure(exc)
+            raise ConfigEntryAuthFailed(str(exc)) from exc
         except NutriPointsApiError as exc:
             self.last_error = str(exc)
             self.day_status_available = False
             self.weight_available = False
             self.readiness_available = False
-            self.record_runtime_failure(exc)
+            self.record_poll_failure(exc)
             raise UpdateFailed(str(exc)) from exc
         try:
             self.last_weight_error = None
             overview = await self.api_client.async_get_weight_overview(range="all")
             data["weight"] = self._extract_weight_payload(overview)
             self.weight_available = True
+        except NutriPointsAuthError as exc:
+            self.record_poll_failure(exc)
+            raise ConfigEntryAuthFailed(str(exc)) from exc
         except NutriPointsApiError as exc:
             self.last_weight_error = str(exc)
             data["weight"] = {}
@@ -144,6 +173,9 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.last_readiness_error = None
             data["readiness"] = await self.api_client.async_get_today_readiness()
             self.readiness_available = True
+        except NutriPointsAuthError as exc:
+            self.record_poll_failure(exc)
+            raise ConfigEntryAuthFailed(str(exc)) from exc
         except NutriPointsApiError as exc:
             self.last_readiness_error = str(exc)
             data["readiness"] = {}

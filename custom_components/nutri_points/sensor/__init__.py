@@ -57,7 +57,7 @@ SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
-    coordinator: NutriPointsDataUpdateCoordinator = hass.data[DOMAIN]["entries"][entry.entry_id]["coordinator"]
+    coordinator = entry.runtime_data.coordinator
     known_drink_type_ids: set[int] = set()
 
     def _build_drink_entities() -> list[NutriPointsDrinkSensor]:

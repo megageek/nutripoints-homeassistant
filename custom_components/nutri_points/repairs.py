@@ -38,9 +38,10 @@ def classify_runtime_failure(exc: Exception) -> str:
 
 
 class NutriPointsRuntimeIssueTracker:
-    def __init__(self, *, hass: HomeAssistant, entry_id: str) -> None:
+    def __init__(self, *, hass: HomeAssistant, entry_id: str, scope: str) -> None:
         self._hass = hass
         self._entry_id = entry_id
+        self._scope = scope
         self.failure_class: str | None = None
         self.failure_count = 0
         self.first_failure_at: str | None = None
@@ -50,7 +51,7 @@ class NutriPointsRuntimeIssueTracker:
         return datetime.now(UTC).isoformat()
 
     def _issue_id(self, failure_class: str) -> str:
-        return f"{self._entry_id}_{failure_class}"
+        return f"{self._entry_id}_{self._scope}_{failure_class}"
 
     def diagnostics(self) -> dict[str, object]:
         return {
@@ -94,7 +95,7 @@ class NutriPointsRuntimeIssueTracker:
             self._hass,
             DOMAIN,
             issue_id,
-            is_fixable=failure_class != RUNTIME_FAILURE_TRANSIENT_TRANSPORT,
+            is_fixable=False,
             severity=ir.IssueSeverity.WARNING
             if failure_class == RUNTIME_FAILURE_TRANSIENT_TRANSPORT
             else ir.IssueSeverity.ERROR,

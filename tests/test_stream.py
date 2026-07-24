@@ -34,10 +34,10 @@ class FakeCoordinator:
     def mark_stream_stopped(self) -> None:
         self.stopped += 1
 
-    def record_runtime_success(self) -> None:
+    def record_stream_success(self) -> None:
         return None
 
-    def record_runtime_failure(self, exc: Exception) -> None:
+    def record_stream_failure(self, exc: Exception) -> None:
         self.failures.append(str(exc))
 
 

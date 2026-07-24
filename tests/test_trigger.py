@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -10,6 +11,7 @@ import voluptuous as vol
 
 from custom_components.nutri_points.const import DOMAIN, automation_event_signal
 from custom_components.nutri_points.trigger import FoodLoggedTrigger
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_OPTIONS
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.trigger import TriggerConfig
@@ -17,9 +19,12 @@ from homeassistant.helpers.trigger import TriggerConfig
 
 async def test_food_trigger_filters_and_exposes_event_payload(hass) -> None:
     """Matching events are passed directly into Home Assistant trigger data."""
-    hass.data[DOMAIN] = {
-        "entries": {"entry-1": {"automation_events_supported": True}},
-    }
+    entry = SimpleNamespace(
+        domain=DOMAIN,
+        state=ConfigEntryState.LOADED,
+        runtime_data=SimpleNamespace(automation_events_supported=True),
+    )
+    hass.config_entries.async_get_entry = Mock(return_value=entry)
     options = {"entry_id": "entry-1", "trigger_action": "food_item_logged", "meal_type": "lunch"}
     validated = await FoodLoggedTrigger.async_validate_config(hass, {CONF_OPTIONS: options})
     trigger = FoodLoggedTrigger(hass, TriggerConfig(key="food_logged", options=validated[CONF_OPTIONS]))
@@ -41,7 +46,12 @@ async def test_food_trigger_filters_and_exposes_event_payload(hass) -> None:
 
 async def test_trigger_rejects_server_without_capability(hass) -> None:
     """Triggers cannot attach to older contract generations."""
-    hass.data[DOMAIN] = {"entries": {"entry-1": {"automation_events_supported": False}}}
+    entry = SimpleNamespace(
+        domain=DOMAIN,
+        state=ConfigEntryState.LOADED,
+        runtime_data=SimpleNamespace(automation_events_supported=False),
+    )
+    hass.config_entries.async_get_entry = Mock(return_value=entry)
 
     with pytest.raises(vol.Invalid, match="does not advertise"):
         await FoodLoggedTrigger.async_validate_config(hass, {CONF_OPTIONS: {"entry_id": "entry-1"}})

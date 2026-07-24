@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
+
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.nutri_points.api import NutriPointsApiError, NutriPointsAuthError
 from custom_components.nutri_points.const import DOMAIN
@@ -17,7 +19,12 @@ async def test_coordinator_keeps_dataset_availability_independent(hass: HomeAssi
     api.async_get_today_status.return_value = {"status": "ready", "remaining_points": 10}
     api.async_get_today_readiness.return_value = {"weigh_in": {"status": "up_to_date"}}
     api.async_get_weight_overview.side_effect = NutriPointsApiError("weight unavailable")
-    coordinator = NutriPointsDataUpdateCoordinator(hass, api_client=api, poll_interval_seconds=60, entry_id="entry")
+    coordinator = NutriPointsDataUpdateCoordinator(
+        hass,
+        api_client=api,
+        poll_interval_seconds=60,
+        config_entry=MockConfigEntry(domain=DOMAIN),
+    )
 
     await coordinator.async_refresh()
     data = coordinator.data
@@ -35,12 +42,30 @@ async def test_runtime_auth_failure_creates_and_recovery_clears_repair(hass: Hom
         hass,
         api_client=AsyncMock(),
         poll_interval_seconds=60,
-        entry_id="entry",
+        config_entry=MockConfigEntry(domain=DOMAIN, entry_id="entry"),
     )
 
-    coordinator.record_runtime_failure(NutriPointsAuthError("invalid"))
-    issue_id = "entry_invalid_auth"
+    coordinator.record_poll_failure(NutriPointsAuthError("invalid"))
+    issue_id = "entry_poll_invalid_auth"
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is not None
 
-    coordinator.record_runtime_success()
+    coordinator.record_poll_success()
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
+
+
+async def test_coordinator_auth_failure_requests_reauthentication(hass: HomeAssistant) -> None:
+    """Authentication failures are not retried as transport failures."""
+    api = AsyncMock()
+    api.async_get_today_status.side_effect = NutriPointsAuthError("invalid")
+    entry = MockConfigEntry(domain=DOMAIN)
+    coordinator = NutriPointsDataUpdateCoordinator(
+        hass,
+        api_client=api,
+        poll_interval_seconds=60,
+        config_entry=entry,
+    )
+
+    with patch.object(entry, "async_start_reauth") as start_reauth:
+        await coordinator.async_refresh()
+
+    start_reauth.assert_called_once_with(hass)

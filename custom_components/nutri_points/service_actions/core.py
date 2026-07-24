@@ -34,8 +34,10 @@ from custom_components.nutri_points.const import (
     SERVICE_SET_STEPS,
 )
 from custom_components.nutri_points.coordinator import NutriPointsDataUpdateCoordinator
+from custom_components.nutri_points.data import NutriPointsConfigEntry
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .parsing import (
     _async_parse_float,
@@ -59,22 +61,22 @@ from .schemas import (
 
 
 def _resolve_entry_context(hass: HomeAssistant, call: ServiceCall) -> dict[str, Any]:
-    domain_data = hass.data.get(DOMAIN, {})
-    entries: dict[str, dict[str, Any]] = domain_data.get("entries", {})
+    entries = hass.config_entries.async_entries(DOMAIN)
     requested_entry_id = call.data.get(CONF_ENTRY_ID)
 
     if requested_entry_id:
-        entry_ctx = entries.get(requested_entry_id)
-        if entry_ctx is None:
-            raise HomeAssistantError(f"Nutri Points entry '{requested_entry_id}' is not loaded.")
-        return entry_ctx
+        entry = hass.config_entries.async_get_entry(requested_entry_id)
+        if entry is None or entry.domain != DOMAIN:
+            raise ServiceValidationError(f"Nutri Points entry '{requested_entry_id}' was not found.")
+    elif entries:
+        entry = entries[0]
+    else:
+        raise ServiceValidationError("Nutri Points integration is not configured.")
 
-    if not entries:
-        raise HomeAssistantError("Nutri Points integration is not configured.")
-    if len(entries) > 1:
-        raise HomeAssistantError("Multiple Nutri Points entries found. Provide 'entry_id' in the service call.")
-
-    return next(iter(entries.values()))
+    if entry.state is not ConfigEntryState.LOADED:
+        raise ServiceValidationError("The Nutri Points config entry is not loaded.")
+    runtime = cast(NutriPointsConfigEntry, entry).runtime_data
+    return {"api_client": runtime.api_client, "coordinator": runtime.coordinator}
 
 
 async def _async_run_write(hass: HomeAssistant, call: ServiceCall, *, operation: str) -> None:
@@ -169,7 +171,11 @@ async def _async_run_write(hass: HomeAssistant, call: ServiceCall, *, operation:
     await coordinator.async_request_refresh()
 
 
-def _register_services(hass: HomeAssistant) -> None:
+def async_setup_services(hass: HomeAssistant) -> None:
+    """Register Nutri Points service actions once for the integration domain."""
+    if hass.services.has_service(DOMAIN, SERVICE_LOG_FOOD):
+        return
+
     async def async_handle_log_food(call: ServiceCall) -> None:
         await _async_run_write(hass, call, operation=SERVICE_LOG_FOOD)
 
@@ -215,8 +221,3 @@ def _register_services(hass: HomeAssistant) -> None:
         async_handle_set_steps,
         schema=STEPS_SERVICE_SCHEMA,
     )
-
-
-def _unregister_services(hass: HomeAssistant) -> None:
-    for service in (SERVICE_LOG_FOOD, SERVICE_LOG_ACTIVITY, SERVICE_LOG_DRINK, SERVICE_LOG_WEIGHT, SERVICE_SET_STEPS):
-        hass.services.async_remove(DOMAIN, service)

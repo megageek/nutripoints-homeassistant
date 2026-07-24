@@ -6,6 +6,7 @@ from typing import Any, cast
 
 import voluptuous as vol
 
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_OPTIONS
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
@@ -37,8 +38,13 @@ class NutriPointsAutomationTrigger(Trigger):
         schema = vol.Schema({vol.Required(CONF_OPTIONS): options_schema})
         validated = cast(ConfigType, schema(config))
         options = validated[CONF_OPTIONS]
-        entry = hass.data.get(DOMAIN, {}).get("entries", {}).get(options[CONF_ENTRY_ID])
-        if entry is None or not entry.get("automation_events_supported", False):
+        entry = hass.config_entries.async_get_entry(options[CONF_ENTRY_ID])
+        if (
+            entry is None
+            or entry.domain != DOMAIN
+            or entry.state is not ConfigEntryState.LOADED
+            or not entry.runtime_data.automation_events_supported
+        ):
             raise vol.Invalid("This Nutri Points entry does not advertise durable automation events")
         return validated
 

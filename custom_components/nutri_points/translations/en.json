@@ -16,6 +16,25 @@
           "api_key": "Create an API key in Nutri Points Settings and paste it here.",
           "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
         }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect Nutri Points",
+        "description": "The API key for {name} is no longer accepted. Enter a replacement API key.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Nutri Points",
+        "description": "Update the Nutri Points server connection.",
+        "data": {
+          "base_url": "Base URL",
+          "verify_ssl": "Verify TLS certificates"
+        },
+        "data_description": {
+          "base_url": "Use the full Nutri Points base URL with http:// or https:// and no extra path.",
+          "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
+        }
       }
     },
     "error": {
@@ -30,7 +49,10 @@
       "invalid_input": "Invalid input provided."
     },
     "abort": {
-      "already_configured": "This Nutri Points server is already configured."
+      "already_configured": "This Nutri Points server is already configured.",
+      "reauth_successful": "Nutri Points authentication was updated successfully.",
+      "reconfigure_successful": "Nutri Points was reconfigured successfully.",
+      "single_instance_allowed": "Only one Nutri Points server can be configured."
     }
   },
   "options": {
@@ -38,16 +60,8 @@
       "init": {
         "title": "Nutri Points options",
         "data": {
-          "base_url": "Base URL",
-          "api_key": "Replacement API key (optional)",
           "poll_interval_seconds": "Poll interval seconds",
-          "low_points_threshold": "Low points threshold",
-          "verify_ssl": "Verify TLS certificates"
-        },
-        "data_description": {
-          "base_url": "Update the Nutri Points server URL in place. Use the full http:// or https:// URL with no extra path.",
-          "api_key": "Leave blank to keep the current stored API key. Enter a new key only when rotating or replacing it.",
-          "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
+          "low_points_threshold": "Low points threshold"
         }
       }
     },

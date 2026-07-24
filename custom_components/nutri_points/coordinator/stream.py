@@ -7,7 +7,12 @@ import logging
 import random
 from typing import TYPE_CHECKING, Any
 
-from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsApiError, NutriPointsReplayGapError
+from custom_components.nutri_points.api import (
+    NutriPointsApiClient,
+    NutriPointsApiError,
+    NutriPointsAuthError,
+    NutriPointsReplayGapError,
+)
 from custom_components.nutri_points.const import (
     AUTOMATION_EVENT_NAMES,
     DOMAIN,
@@ -100,7 +105,7 @@ class NutriPointsEventStreamListener:
 
     async def _handle_stream_connected(self) -> None:
         self._coordinator.mark_stream_connected()
-        self._coordinator.record_runtime_success()
+        self._coordinator.record_stream_success()
         self._last_logged_error = None
         self._clear_replay_gap_issue()
         try:
@@ -141,10 +146,18 @@ class NutriPointsEventStreamListener:
                     await self._save_cursor(exc.latest_event_id)
                 self._create_replay_gap_issue()
                 self._coordinator.mark_stream_backoff(str(exc))
+            except NutriPointsAuthError as exc:
+                error_message = str(exc)
+                self._coordinator.mark_stream_backoff(error_message)
+                self._coordinator.record_stream_failure(exc)
+                if self._hass is not None and self._entry_id is not None:
+                    entry = self._hass.config_entries.async_get_entry(self._entry_id)
+                    if entry is not None:
+                        entry.async_start_reauth(self._hass)
             except NutriPointsApiError as exc:
                 error_message = str(exc)
                 self._coordinator.mark_stream_backoff(error_message)
-                self._coordinator.record_runtime_failure(exc)
+                self._coordinator.record_stream_failure(exc)
                 if error_message != self._last_logged_error:
                     self._logger.warning(
                         "Nutri Points SSE disconnected; falling back to polling until reconnect: %s",
@@ -153,7 +166,7 @@ class NutriPointsEventStreamListener:
                     self._last_logged_error = error_message
             except Exception as exc:  # pragma: no cover - safety catch
                 self._coordinator.mark_stream_backoff(str(exc))
-                self._coordinator.record_runtime_failure(exc)
+                self._coordinator.record_stream_failure(exc)
                 self._logger.exception("Unexpected Nutri Points SSE listener error")
 
             delay = min(SSE_RECONNECT_MAX_SECONDS, backoff_seconds)
