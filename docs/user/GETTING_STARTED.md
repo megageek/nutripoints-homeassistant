@@ -14,6 +14,8 @@
 3. Go to **Settings → Devices & services → Add integration** and select **Nutri Points**.
 4. Enter the server base URL and API key. The flow validates the server and its API contract before saving.
 
+Only one Nutri Points server can be configured in a Home Assistant installation.
+
 If upgrading from the formerly bundled component, remove or rename
 `custom_components/nutri_points`, restart, install this HACS repository, restart again,
 and reload the existing config entry. The entry data and entity unique IDs are retained.
@@ -33,3 +35,7 @@ logger:
 
 Contract errors mean the server exposes a generation the installed integration does
 not support. Upgrade the integration or server; do not bypass the compatibility check.
+
+If an API key expires or is revoked, Home Assistant prompts for a replacement through
+the integration's reauthentication flow. For support requests, download diagnostics
+from the integration entry; API credentials and personal nutrition data are excluded.

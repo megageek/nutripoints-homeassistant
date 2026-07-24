@@ -126,9 +126,36 @@ Current architecture assumes single device per config entry. If multi-device sup
 
 ### Polling vs. Push
 
-**Status:** Uses polling
+**Status:** Uses hybrid push and polling
 
-Currently implements polling-based updates. If the API supports webhooks or WebSocket, consider implementing push-based updates for real-time responsiveness.
+The authenticated SSE stream requests immediate coordinator refreshes, while periodic polling
+remains active for recovery and offline detection.
+
+---
+
+### Single Nutri Points Server
+
+**Date:** 2026-07-24
+
+**Context:** Nutri Points runtime metadata has no immutable server identifier. URLs are mutable
+and cannot safely identify config entries, while domain-wide entity unique IDs collide if
+multiple entries are configured.
+
+**Decision:** Support one Nutri Points config entry per Home Assistant installation, clear
+legacy URL-derived config-entry unique IDs, and preserve all existing entity unique IDs.
+
+**Rationale:**
+
+- Avoids using a mutable URL as identity
+- Preserves existing dashboards and automations
+- Matches the intended one-server deployment model
+- Avoids requiring a server API contract change
+
+**Consequences:**
+
+- A second Nutri Points server cannot be configured
+- The optional action `entry_id` field remains accepted for backward compatibility
+- Multi-server support would require an immutable server-provided identifier and migrations
 
 ---
 

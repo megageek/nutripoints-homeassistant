@@ -34,6 +34,5 @@ jobs:
         run: ./script/setup/bootstrap
 
       - name: Run integration tests with coverage
-        # The extracted legacy component starts at 44%; keep CI above a stable
-        # floor and raise this ratchet as behavior-focused tests are added.
-        run: ./script/test --cov --cov-fail-under=40
+        # Keep CI below the measured result while preventing meaningful regressions.
+        run: ./script/test --cov --cov-fail-under=65

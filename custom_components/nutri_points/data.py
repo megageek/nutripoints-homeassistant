@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 
@@ -18,6 +19,7 @@ class NutriPointsRuntimeData:
     coordinator: NutriPointsDataUpdateCoordinator
     listener: NutriPointsEventStreamListener
     automation_events_supported: bool
+    runtime_metadata: dict[str, Any]
 
 
 type NutriPointsConfigEntry = ConfigEntry[NutriPointsRuntimeData]

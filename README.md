@@ -26,8 +26,11 @@ When migrating from the component previously bundled in the Nutri Points server 
 - Exposes point, drink, weight, planning, budget, and weigh-in entities.
 - Reports persistent authentication, host, network-policy, contract, and transport failures through Repairs.
 - Registers `log_food`, `log_activity`, `log_drink`, `log_weight`, and `set_steps` actions under the `nutri_points` domain.
+- Creates one Nutri Points device with translated entities and downloadable, credential-redacted diagnostics.
 
 The integration supports Nutri Points contract generations `stable-rw-v1` through `stable-rw-v4`. Unknown generations are rejected during setup so incompatible data cannot silently reach automations. Custom automation triggers require the `ha_automation_events_v1` capability introduced by `stable-rw-v4`; older servers continue to provide the existing entities and actions.
+
+One Nutri Points server can be configured per Home Assistant installation. Connection settings can be changed with **Reconfigure**, while polling and threshold settings remain under **Options**. Home Assistant starts **Reconfigure authentication** automatically if the API key expires.
 
 ## Development
 

@@ -79,6 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: NutriPointsConfigEntry) 
         coordinator=coordinator,
         listener=listener,
         automation_events_supported=AUTOMATION_EVENTS_CAPABILITY in runtime.get("capabilities", []),
+        runtime_metadata=runtime,
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

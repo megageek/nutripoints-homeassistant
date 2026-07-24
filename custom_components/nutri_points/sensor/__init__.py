@@ -5,11 +5,12 @@ from typing import Any
 
 from custom_components.nutri_points.const import ATTR_LAST_ERROR, DOMAIN
 from custom_components.nutri_points.coordinator import NutriPointsDataUpdateCoordinator
-from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
-from homeassistant.config_entries import ConfigEntry
+from custom_components.nutri_points.data import NutriPointsConfigEntry
+from custom_components.nutri_points.entity import NutriPointsEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
+from homeassistant.const import UnitOfMass, UnitOfVolume
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -20,43 +21,52 @@ class NutriSensorDescription(SensorEntityDescription):
 SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
     NutriSensorDescription(
         key="remaining_points",
-        name="Nutri Remaining Points",
+        translation_key="remaining_points",
         icon="mdi:counter",
         source_key="remaining_points",
         native_unit_of_measurement="points",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     NutriSensorDescription(
         key="budget_points",
-        name="Nutri Budget Points",
+        translation_key="budget_points",
         icon="mdi:target",
         source_key="budget_points",
         native_unit_of_measurement="points",
+        state_class=SensorStateClass.MEASUREMENT,
     ),
     NutriSensorDescription(
         key="food_points",
-        name="Nutri Food Points",
+        translation_key="food_points",
         icon="mdi:food-apple",
         source_key="food_points",
         native_unit_of_measurement="points",
+        state_class=SensorStateClass.TOTAL,
     ),
     NutriSensorDescription(
         key="activity_points",
-        name="Nutri Activity Points",
+        translation_key="activity_points",
         icon="mdi:run",
         source_key="activity_points",
         native_unit_of_measurement="points",
+        state_class=SensorStateClass.TOTAL,
     ),
     NutriSensorDescription(
         key="total_drink_volume_ml",
-        name="Nutri Drink Volume",
+        translation_key="total_drink_volume",
         icon="mdi:cup-water",
         source_key="total_drink_volume_ml",
-        native_unit_of_measurement="ml",
+        native_unit_of_measurement=UnitOfVolume.MILLILITERS,
+        state_class=SensorStateClass.TOTAL,
     ),
 )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: NutriPointsConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     known_drink_type_ids: set[int] = set()
 
@@ -72,7 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             if not isinstance(drink_type_id, int) or drink_type_id in known_drink_type_ids:
                 continue
             known_drink_type_ids.add(drink_type_id)
-            entities.append(NutriPointsDrinkSensor(coordinator=coordinator, drink_type_id=drink_type_id))
+            entities.append(NutriPointsDrinkSensor(coordinator=coordinator, entry=entry, drink_type_id=drink_type_id))
         return entities
 
     @callback
@@ -84,21 +94,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities(
         [
             *(
-                NutriPointsSensor(coordinator=coordinator, description=description)
+                NutriPointsSensor(coordinator=coordinator, entry=entry, description=description)
                 for description in SENSOR_DESCRIPTIONS
             ),
-            NutriPointsWeightSensor(coordinator=coordinator),
+            NutriPointsWeightSensor(coordinator=coordinator, entry=entry),
             *_build_drink_entities(),
         ]
     )
     entry.async_on_unload(coordinator.async_add_listener(_async_discover_drink_entities))
 
 
-class NutriPointsSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], SensorEntity):
+class NutriPointsSensor(SensorEntity, NutriPointsEntity):
     entity_description: NutriSensorDescription
 
-    def __init__(self, *, coordinator: NutriPointsDataUpdateCoordinator, description: NutriSensorDescription) -> None:
-        super().__init__(coordinator)
+    def __init__(
+        self,
+        *,
+        coordinator: NutriPointsDataUpdateCoordinator,
+        entry: NutriPointsConfigEntry,
+        description: NutriSensorDescription,
+    ) -> None:
+        super().__init__(coordinator=coordinator, entry=entry)
         self.entity_description = description
         self._attr_unique_id = f"{DOMAIN}_{description.key}"
 
@@ -125,7 +141,6 @@ class NutriPointsSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], Sen
             "detail_error_code": data.get("detail_error_code"),
             "detail_retryable": data.get("detail_retryable"),
         }
-        attrs.update(self.coordinator.connection_diagnostics())
         if self.coordinator.last_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_error
         return attrs
@@ -135,13 +150,21 @@ class NutriPointsSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], Sen
         return super().available and bool(self.coordinator.day_status_available)
 
 
-class NutriPointsWeightSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], SensorEntity):
-    def __init__(self, *, coordinator: NutriPointsDataUpdateCoordinator) -> None:
-        super().__init__(coordinator)
+class NutriPointsWeightSensor(SensorEntity, NutriPointsEntity):
+    def __init__(
+        self,
+        *,
+        coordinator: NutriPointsDataUpdateCoordinator,
+        entry: NutriPointsConfigEntry,
+    ) -> None:
+        super().__init__(coordinator=coordinator, entry=entry)
         self._attr_unique_id = f"{DOMAIN}_weight"
-        self._attr_name = "Nutri Current Weight"
+        self._attr_translation_key = "current_weight"
         self._attr_icon = "mdi:scale-bathroom"
-        self._attr_native_unit_of_measurement = "kg"
+        self._attr_device_class = SensorDeviceClass.WEIGHT
+        self._attr_native_unit_of_measurement = UnitOfMass.KILOGRAMS
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_suggested_display_precision = 1
 
     @property
     def native_value(self):
@@ -172,7 +195,6 @@ class NutriPointsWeightSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator
             "detail_error_code": data.get("detail_error_code"),
             "detail_retryable": data.get("detail_retryable"),
         }
-        attrs.update(self.coordinator.connection_diagnostics())
         if self.coordinator.last_weight_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_weight_error
         return attrs
@@ -182,13 +204,21 @@ class NutriPointsWeightSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator
         return super().available and bool(self.coordinator.weight_available)
 
 
-class NutriPointsDrinkSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], SensorEntity):
-    def __init__(self, *, coordinator: NutriPointsDataUpdateCoordinator, drink_type_id: int) -> None:
-        super().__init__(coordinator)
+class NutriPointsDrinkSensor(SensorEntity, NutriPointsEntity):
+    def __init__(
+        self,
+        *,
+        coordinator: NutriPointsDataUpdateCoordinator,
+        entry: NutriPointsConfigEntry,
+        drink_type_id: int,
+    ) -> None:
+        super().__init__(coordinator=coordinator, entry=entry)
         self._drink_type_id = drink_type_id
         self._attr_unique_id = f"{DOMAIN}_drink_{drink_type_id}"
-        self._attr_native_unit_of_measurement = "ml"
+        self._attr_translation_key = "drink"
+        self._attr_native_unit_of_measurement = UnitOfVolume.MILLILITERS
         self._attr_icon = "mdi:cup-water"
+        self._attr_state_class = SensorStateClass.TOTAL
 
     def _current_row(self) -> dict[str, Any]:
         data = self.coordinator.data or {}
@@ -200,12 +230,12 @@ class NutriPointsDrinkSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator]
         return {}
 
     @property
-    def name(self) -> str | None:
+    def translation_placeholders(self) -> dict[str, str]:
         row = self._current_row()
         drink_type_name = row.get("drink_type_name")
         if isinstance(drink_type_name, str) and drink_type_name.strip():
-            return f"Nutri Drink {drink_type_name.strip()}"
-        return f"Nutri Drink {self._drink_type_id}"
+            return {"name": drink_type_name.strip()}
+        return {"name": str(self._drink_type_id)}
 
     @property
     def native_value(self):
@@ -228,7 +258,6 @@ class NutriPointsDrinkSensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator]
             "detail_error_code": data.get("detail_error_code"),
             "detail_retryable": data.get("detail_retryable"),
         }
-        attrs.update(self.coordinator.connection_diagnostics())
         if self.coordinator.last_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_error
         return attrs

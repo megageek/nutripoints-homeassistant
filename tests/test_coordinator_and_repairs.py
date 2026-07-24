@@ -53,6 +53,21 @@ async def test_runtime_auth_failure_creates_and_recovery_clears_repair(hass: Hom
     assert ir.async_get(hass).async_get_issue(DOMAIN, issue_id) is None
 
 
+async def test_stream_success_does_not_clear_poll_failure(hass: HomeAssistant) -> None:
+    """Recovery in one transport channel does not hide another channel's issue."""
+    coordinator = NutriPointsDataUpdateCoordinator(
+        hass,
+        api_client=AsyncMock(),
+        poll_interval_seconds=60,
+        config_entry=MockConfigEntry(domain=DOMAIN, entry_id="entry"),
+    )
+    coordinator.record_poll_failure(NutriPointsAuthError("invalid"))
+
+    coordinator.record_stream_success()
+
+    assert ir.async_get(hass).async_get_issue(DOMAIN, "entry_poll_invalid_auth") is not None
+
+
 async def test_coordinator_auth_failure_requests_reauthentication(hass: HomeAssistant) -> None:
     """Authentication failures are not retried as transport failures."""
     api = AsyncMock()

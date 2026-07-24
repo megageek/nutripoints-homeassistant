@@ -78,6 +78,45 @@
       "invalid_input": "Invalid input provided."
     }
   },
+  "entity": {
+    "sensor": {
+      "remaining_points": {
+        "name": "Remaining points"
+      },
+      "budget_points": {
+        "name": "Budget points"
+      },
+      "food_points": {
+        "name": "Food points"
+      },
+      "activity_points": {
+        "name": "Activity points"
+      },
+      "total_drink_volume": {
+        "name": "Drink volume"
+      },
+      "current_weight": {
+        "name": "Current weight"
+      },
+      "drink": {
+        "name": "Drink {name}"
+      }
+    },
+    "binary_sensor": {
+      "points_low": {
+        "name": "Points low"
+      },
+      "over_budget": {
+        "name": "Over budget"
+      },
+      "has_planned_food": {
+        "name": "Has planned food"
+      },
+      "weigh_in_due": {
+        "name": "Weigh-in due"
+      }
+    }
+  },
   "issues": {
     "automation_replay_gap": {
       "title": "Some Nutri Points automation events could not be replayed",

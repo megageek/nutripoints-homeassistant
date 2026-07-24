@@ -11,11 +11,15 @@ from custom_components.nutri_points.const import (
     DOMAIN,
 )
 from custom_components.nutri_points.coordinator import NutriPointsDataUpdateCoordinator
-from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorEntityDescription
-from homeassistant.config_entries import ConfigEntry
+from custom_components.nutri_points.data import NutriPointsConfigEntry
+from custom_components.nutri_points.entity import NutriPointsEntity
+from homeassistant.components.binary_sensor import (
+    BinarySensorDeviceClass,
+    BinarySensorEntity,
+    BinarySensorEntityDescription,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -57,26 +61,32 @@ def _weigh_in_payload(data: dict[str, Any]) -> dict[str, Any]:
 BINARY_SENSOR_DESCRIPTIONS: tuple[NutriBinarySensorDescription, ...] = (
     NutriBinarySensorDescription(
         key="points_low",
-        name="Nutri Points Low",
+        translation_key="points_low",
         icon="mdi:alert-circle-outline",
+        device_class=BinarySensorDeviceClass.PROBLEM,
         evaluator=_is_points_low,
     ),
     NutriBinarySensorDescription(
         key="over_budget",
-        name="Nutri Over Budget",
+        translation_key="over_budget",
         icon="mdi:alert-circle",
+        device_class=BinarySensorDeviceClass.PROBLEM,
         evaluator=_is_over_budget,
     ),
     NutriBinarySensorDescription(
         key="has_planned_food",
-        name="Nutri Has Planned Food",
+        translation_key="has_planned_food",
         icon="mdi:calendar-check",
         evaluator=_has_planned_food,
     ),
 )
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: NutriPointsConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     low_points_threshold = int(
         entry.options.get(
@@ -89,27 +99,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             *(
                 NutriPointsBinarySensor(
                     coordinator=coordinator,
+                    entry=entry,
                     description=description,
                     low_points_threshold=low_points_threshold,
                 )
                 for description in BINARY_SENSOR_DESCRIPTIONS
             ),
-            NutriPointsWeighInDueBinarySensor(coordinator=coordinator),
+            NutriPointsWeighInDueBinarySensor(coordinator=coordinator, entry=entry),
         ]
     )
 
 
-class NutriPointsBinarySensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], BinarySensorEntity):
+class NutriPointsBinarySensor(BinarySensorEntity, NutriPointsEntity):
     entity_description: NutriBinarySensorDescription
 
     def __init__(
         self,
         *,
         coordinator: NutriPointsDataUpdateCoordinator,
+        entry: NutriPointsConfigEntry,
         description: NutriBinarySensorDescription,
         low_points_threshold: int,
     ) -> None:
-        super().__init__(coordinator)
+        super().__init__(coordinator=coordinator, entry=entry)
         self.entity_description = description
         self._low_points_threshold = low_points_threshold
         self._attr_unique_id = f"{DOMAIN}_{description.key}"
@@ -135,7 +147,6 @@ class NutriPointsBinarySensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator
             "detail_error_code": data.get("detail_error_code"),
             "detail_retryable": data.get("detail_retryable"),
         }
-        attrs.update(self.coordinator.connection_diagnostics())
         if self.coordinator.last_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_error
         return attrs
@@ -145,12 +156,18 @@ class NutriPointsBinarySensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator
         return super().available and bool(self.coordinator.day_status_available)
 
 
-class NutriPointsWeighInDueBinarySensor(CoordinatorEntity[NutriPointsDataUpdateCoordinator], BinarySensorEntity):
-    def __init__(self, *, coordinator: NutriPointsDataUpdateCoordinator) -> None:
-        super().__init__(coordinator)
+class NutriPointsWeighInDueBinarySensor(BinarySensorEntity, NutriPointsEntity):
+    def __init__(
+        self,
+        *,
+        coordinator: NutriPointsDataUpdateCoordinator,
+        entry: NutriPointsConfigEntry,
+    ) -> None:
+        super().__init__(coordinator=coordinator, entry=entry)
         self._attr_unique_id = f"{DOMAIN}_weigh_in_due"
-        self._attr_name = "Nutri Weigh-In Due"
+        self._attr_translation_key = "weigh_in_due"
         self._attr_icon = "mdi:scale-bathroom"
+        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
 
     @property
     def is_on(self) -> bool:
@@ -169,7 +186,6 @@ class NutriPointsWeighInDueBinarySensor(CoordinatorEntity[NutriPointsDataUpdateC
             "last_weigh_in_date": weigh_in.get("last_weigh_in_date"),
             "expected_weigh_in_date": weigh_in.get("expected_weigh_in_date"),
         }
-        attrs.update(self.coordinator.connection_diagnostics())
         if self.coordinator.last_readiness_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_readiness_error
         return attrs

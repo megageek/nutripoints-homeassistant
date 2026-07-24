@@ -2,16 +2,24 @@
 
 ## Test coverage ratchet
 
-The initial extraction has a 40% enforced line-coverage floor (the measured baseline
-is 44%). New behavior should include tests and must not reduce that floor. Increase
-the CI threshold as coverage grows; do not preserve the number with exclusions or
-coverage-only tests.
+The integration has a 65% enforced line-coverage floor. New behavior should include
+tests and must not reduce that floor. Increase the CI threshold as coverage grows;
+do not preserve the number with exclusions or coverage-only tests.
 
 Nutri Points owns the HTTP/SSE protocol and server-side points logic. This repository owns Home Assistant configuration, entities, actions, availability, streaming, and Repairs behavior.
 
 ## Runtime flow
 
-Entities read normalized coordinator data and never call the API directly. The coordinator obtains day, readiness, weight, and drink data through the API client. The SSE listener requests coordinator refreshes for documented trigger events and leaves periodic polling active as the fallback.
+Entities read normalized coordinator data and never call the API directly. A typed object on
+`ConfigEntry.runtime_data` owns the API client, coordinator, SSE listener, capability flags,
+and runtime metadata. The coordinator obtains day, readiness, weight, and drink data through
+the API client. The SSE listener requests coordinator refreshes for documented trigger events
+and leaves periodic polling active as the fallback.
+
+The integration supports one config entry. Existing URL-derived config-entry unique IDs are
+cleared by migration because a URL is mutable; existing entity unique IDs remain unchanged.
+Polling and streaming use independent health trackers so recovery in one channel cannot hide
+an outage in the other.
 
 Contract-generation differences are normalized in the API package. Version checks must not be scattered through entities or action handlers.
 
@@ -36,6 +44,9 @@ The wheel is a development and test dependency only. It must not be added to `ma
 - `api/`: authenticated HTTP, SSE parsing, error mapping, generation normalization.
 - `coordinator/`: refresh orchestration, independent dataset availability, stream lifecycle.
 - `config_flow.py`: setup and reconfiguration validation.
+- `data.py`: typed config-entry runtime ownership.
+- `diagnostics.py`: redacted connection and contract diagnostics.
+- `entity/`: shared device registration and entity naming.
 - `sensor/` and `binary_sensor/`: Home Assistant entity presentation only.
 - `service_actions/`: action schemas, templated input parsing, and write dispatch.
 - `repairs.py`: persistent runtime issue classification and cleanup.

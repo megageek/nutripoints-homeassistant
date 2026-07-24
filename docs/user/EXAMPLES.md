@@ -41,4 +41,5 @@ data:
   mode: replace_total
 ```
 
-Write actions support an optional `entry_id` when more than one Nutri Points server is configured.
+Write actions continue to accept the legacy optional `entry_id` field, but it is unnecessary
+because the integration supports one Nutri Points server per Home Assistant installation.

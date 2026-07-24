@@ -4,7 +4,7 @@ log_food:
   fields:
     entry_id:
       name: Entry id
-      description: Optional config entry id when multiple Nutri Points instances are configured.
+      description: Legacy optional config entry id. Nutri Points supports one configured server.
       required: false
       selector:
         text:
