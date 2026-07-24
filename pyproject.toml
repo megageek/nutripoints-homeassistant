@@ -10,6 +10,12 @@ name = "nutri_points"
 version = "0.0.0"              # Version is managed in manifest.json only
 requires-python = ">=3.14"
 
+[project.optional-dependencies]
+test = [
+    "pytest-asyncio>=1.2.0",
+    "pytest-homeassistant-custom-component==0.13.325",
+]
+
 [tool.setuptools]
 packages = ["custom_components.nutri_points"]
 
