@@ -8,6 +8,7 @@ food_logged:
     trigger_action:
       selector:
         select:
+          translation_key: food_log_action
           options:
             - any
             - food_log_created
@@ -18,6 +19,7 @@ food_logged:
     meal_type:
       selector:
         select:
+          translation_key: meal_type
           options: [any, breakfast, lunch, dinner, snack]
 food_weighing_session_started:
   fields:
@@ -29,6 +31,7 @@ food_weighing_session_started:
     meal_type:
       selector:
         select:
+          translation_key: meal_type
           options: [any, breakfast, lunch, dinner, snack]
 weigh_in_summary_generated:
   fields:
@@ -40,6 +43,7 @@ weigh_in_summary_generated:
     trigger_action:
       selector:
         select:
+          translation_key: weigh_in_action
           options: [any, weight_log_created, weight_log_updated]
 recipe_batch_label_requested:
   fields:
@@ -51,4 +55,5 @@ recipe_batch_label_requested:
     trigger_action:
       selector:
         select:
+          translation_key: recipe_batch_action
           options: [any, recipe_batch_created, recipe_batch_reprinted]

@@ -88,6 +88,103 @@
       "invalid_input": "Invalid input provided."
     }
   },
+  "selector": {
+    "food_log_action": {
+      "options": {
+        "any": "Any food log action",
+        "food_log_created": "Food log created",
+        "food_item_logged": "Food item logged",
+        "recipe_batch_logged": "Recipe batch logged",
+        "recipe_logged": "Recipe logged",
+        "saved_meal_logged": "Saved meal logged"
+      }
+    },
+    "meal_type": {
+      "options": {
+        "any": "Any meal",
+        "breakfast": "Breakfast",
+        "dinner": "Dinner",
+        "lunch": "Lunch",
+        "snack": "Snack"
+      }
+    },
+    "recipe_batch_action": {
+      "options": {
+        "any": "Any label action",
+        "recipe_batch_created": "Recipe batch created",
+        "recipe_batch_reprinted": "Recipe batch reprinted"
+      }
+    },
+    "weigh_in_action": {
+      "options": {
+        "any": "Any weight log action",
+        "weight_log_created": "Weight log created",
+        "weight_log_updated": "Weight log updated"
+      }
+    }
+  },
+  "triggers": {
+    "food_logged": {
+      "name": "Food logged",
+      "description": "Triggers when food is logged in Nutri Points.",
+      "fields": {
+        "entry_id": {
+          "name": "Nutri Points server",
+          "description": "The Nutri Points server whose food logs should trigger the automation."
+        },
+        "meal_type": {
+          "name": "Meal type",
+          "description": "The meal type to monitor, or any meal type."
+        },
+        "trigger_action": {
+          "name": "Food log action",
+          "description": "The kind of food logging action to monitor, or any food log action."
+        }
+      }
+    },
+    "food_weighing_session_started": {
+      "name": "Food weighing session started",
+      "description": "Triggers when a food weighing session starts in Nutri Points.",
+      "fields": {
+        "entry_id": {
+          "name": "Nutri Points server",
+          "description": "The Nutri Points server whose weighing sessions should trigger the automation."
+        },
+        "meal_type": {
+          "name": "Meal type",
+          "description": "The meal type to monitor, or any meal type."
+        }
+      }
+    },
+    "recipe_batch_label_requested": {
+      "name": "Recipe batch label requested",
+      "description": "Triggers when a label is requested for a recipe batch in Nutri Points.",
+      "fields": {
+        "entry_id": {
+          "name": "Nutri Points server",
+          "description": "The Nutri Points server whose recipe batch label requests should trigger the automation."
+        },
+        "trigger_action": {
+          "name": "Label action",
+          "description": "The kind of recipe batch label action to monitor, or any label action."
+        }
+      }
+    },
+    "weigh_in_summary_generated": {
+      "name": "Weigh-in summary generated",
+      "description": "Triggers when Nutri Points generates a weigh-in summary.",
+      "fields": {
+        "entry_id": {
+          "name": "Nutri Points server",
+          "description": "The Nutri Points server whose weigh-in summaries should trigger the automation."
+        },
+        "trigger_action": {
+          "name": "Weight log action",
+          "description": "The kind of weight log action to monitor, or any weight log action."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "remaining_points": {

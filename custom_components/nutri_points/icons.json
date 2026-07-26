@@ -1,0 +1,16 @@
+{
+  "triggers": {
+    "food_logged": {
+      "trigger": "mdi:food-apple"
+    },
+    "food_weighing_session_started": {
+      "trigger": "mdi:scale"
+    },
+    "recipe_batch_label_requested": {
+      "trigger": "mdi:label-outline"
+    },
+    "weigh_in_summary_generated": {
+      "trigger": "mdi:scale-bathroom"
+    }
+  }
+}
