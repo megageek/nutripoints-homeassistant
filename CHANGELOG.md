@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.3](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.2...v0.3.3) (2026-07-26)
+
+
+### Bug Fixes
+
+* **triggers:** support not-triggered reporter ([08c7a09](https://github.com/megageek/nutripoints-homeassistant/commit/08c7a09b000c5a07a65df7a0cbb26564594d753d))
+
 ## [0.3.2](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.1...v0.3.2) (2026-07-26)
 
 
