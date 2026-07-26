@@ -30,6 +30,7 @@ DRINK_LOG_ENDPOINT = "/api/v1/logs/drinks"
 DRINK_SETTINGS_ENDPOINT = "/api/v1/settings/drinks"
 WEIGHT_LOG_ENDPOINT = "/api/v1/logs/weight"
 STEPS_LOG_ENDPOINT = "/api/v1/logs/steps"
+WEIGHING_SESSIONS_ENDPOINT = "/api/v1/weighing-sessions"
 
 # Keep Home Assistant compatible with adjacent stable server generations so it can
 # talk to production while development moves forward.
@@ -39,13 +40,17 @@ SUPPORTED_API_CONTRACT_TAGS = (
     "stable-rw-v3",
     "stable-rw-v4",
     "stable-rw-v5",
+    "stable-rw-v6",
+    "stable-rw-v7",
 )
-IDENTITY_API_CONTRACT_TAG = "stable-rw-v5"
+IDENTITY_API_CONTRACT_TAGS = ("stable-rw-v5", "stable-rw-v6", "stable-rw-v7")
 
 IDENTITY_MISMATCH_ISSUE_SUFFIX = "server_identity_mismatch"
 
 AUTOMATION_EVENTS_CAPABILITY = "ha_automation_events_v1"
+WEIGHING_SESSIONS_CAPABILITY = "ha_food_weighing_sessions_v1"
 AUTOMATION_EVENT_NAMES = (
+    "food_weighing_session_started",
     "meal_food_logged",
     "weigh_in_summary_generated",
     "recipe_batch_label_requested",
@@ -61,6 +66,10 @@ SERVICE_LOG_ACTIVITY = "log_activity"
 SERVICE_LOG_DRINK = "log_drink"
 SERVICE_LOG_WEIGHT = "log_weight"
 SERVICE_SET_STEPS = "set_steps"
+SERVICE_PROJECT_WEIGHING_SESSION = "project_weighing_session"
+SERVICE_PREVIEW_WEIGHING_SESSION = "preview_weighing_session"
+SERVICE_COMPLETE_WEIGHING_SESSION = "complete_weighing_session"
+SERVICE_CANCEL_WEIGHING_SESSION = "cancel_weighing_session"
 
 ATTR_LAST_ERROR = "last_error"
 ATTR_RUNTIME_FAILURE_CLASS = "runtime_failure_class"
@@ -95,6 +104,8 @@ SERVICE_ATTR_KCAL = "kcal"
 SERVICE_ATTR_WEIGHT_KG = "weight_kg"
 SERVICE_ATTR_STEPS = "steps"
 SERVICE_ATTR_MODE = "mode"
+SERVICE_ATTR_SESSION_ID = "session_id"
+SERVICE_ATTR_GRAMS = "grams"
 
 MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"]
 FOOD_NUTRITION_ENTRY_MODES = ["macros", "calories", "points"]

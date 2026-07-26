@@ -22,12 +22,13 @@ from custom_components.nutri_points.const import (
     DRINK_SETTINGS_ENDPOINT,
     FOOD_LOG_ENDPOINT,
     HA_EVENTS_ENDPOINT,
-    IDENTITY_API_CONTRACT_TAG,
+    IDENTITY_API_CONTRACT_TAGS,
     READINESS_ENDPOINT,
     RUNTIME_ENDPOINT,
     STEPS_LOG_ENDPOINT,
     SUPPORTED_API_CONTRACT_TAGS,
     TODAY_ENDPOINT,
+    WEIGHING_SESSIONS_ENDPOINT,
     WEIGHT_LOG_ENDPOINT,
     WEIGHT_OVERVIEW_ENDPOINT,
 )
@@ -60,6 +61,14 @@ class NutriPointsReplayGapError(NutriPointsApiError):
     def __init__(self, latest_event_id: int | None) -> None:
         super().__init__("Nutri Points automation event history has a replay gap.")
         self.latest_event_id = latest_event_id
+
+
+class NutriPointsSessionError(NutriPointsApiError):
+    """Raised when a weighing-session operation is rejected."""
+
+    def __init__(self, error_code: str, message: str) -> None:
+        super().__init__(message)
+        self.error_code = error_code
 
 
 class NutriPointsInvalidHostError(NutriPointsApiError):
@@ -209,6 +218,15 @@ class NutriPointsApiClient:
                 "HTTP API key access is blocked for this caller. Add the Home Assistant network "
                 "to API_KEY_HTTP_ALLOWED_CIDRS."
             )
+        if response.content_type == "application/json":
+            try:
+                payload = await response.json()
+            except Exception:
+                payload = {}
+            detail = payload.get("detail") if isinstance(payload, dict) else None
+            error_code = detail.get("error_code") if isinstance(detail, dict) else None
+            if isinstance(error_code, str) and error_code.startswith("food_weighing_session_"):
+                raise NutriPointsSessionError(error_code, error_message)
         raise NutriPointsApiError(f"Nutri Points API request failed: {response.status} {error_message}")
 
     async def async_validate_runtime(self) -> NutriPointsRuntimeMetadata:
@@ -225,9 +243,9 @@ class NutriPointsApiClient:
                 f"Expected one of [{expected}] in api_contract_version, got '{contract_version}'."
             )
         server_uuid = _canonical_uuid4(runtime.get("server_uuid"))
-        if IDENTITY_API_CONTRACT_TAG in contract_version and server_uuid is None:
+        if any(tag in contract_version for tag in IDENTITY_API_CONTRACT_TAGS) and server_uuid is None:
             raise NutriPointsContractError(
-                "Nutri Points stable-rw-v5 runtime metadata must include a canonical UUIDv4 server_uuid."
+                "Nutri Points stable-rw-v5 and newer runtime metadata must include a canonical UUIDv4 server_uuid."
             )
         return cast(
             NutriPointsRuntimeMetadata,
@@ -466,3 +484,33 @@ class NutriPointsApiClient:
         if applies_to_date is not None:
             payload["applies_to_date"] = applies_to_date
         return await self._request(method="PUT", path=STEPS_LOG_ENDPOINT, payload=payload, with_idempotency=True)
+
+    async def async_get_weighing_session(self, session_id: str) -> dict[str, Any]:
+        """Read a food weighing session."""
+        return await self._request(method="GET", path=f"{WEIGHING_SESSIONS_ENDPOINT}/{session_id}")
+
+    async def async_preview_weighing_session(self, session_id: str, grams: float) -> dict[str, Any]:
+        """Request an authoritative food weighing preview."""
+        return await self._request(
+            method="POST",
+            path=f"{WEIGHING_SESSIONS_ENDPOINT}/{session_id}/preview",
+            payload={"grams": grams},
+            with_idempotency=True,
+        )
+
+    async def async_complete_weighing_session(self, session_id: str, grams: float) -> dict[str, Any]:
+        """Complete a food weighing session."""
+        return await self._request(
+            method="POST",
+            path=f"{WEIGHING_SESSIONS_ENDPOINT}/{session_id}/complete",
+            payload={"grams": grams},
+            with_idempotency=True,
+        )
+
+    async def async_cancel_weighing_session(self, session_id: str) -> dict[str, Any]:
+        """Cancel a food weighing session."""
+        return await self._request(
+            method="POST",
+            path=f"{WEIGHING_SESSIONS_ENDPOINT}/{session_id}/cancel",
+            with_idempotency=True,
+        )

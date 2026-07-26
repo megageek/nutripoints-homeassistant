@@ -31,6 +31,8 @@ async def async_get_config_entry_diagnostics(
         },
         "runtime": {
             "automation_events_supported": runtime.automation_events_supported,
+            "weighing_sessions_supported": runtime.weighing_sessions_supported,
+            "weighing_sessions": runtime.weighing_sessions.diagnostics(),
             "connection": runtime.coordinator.connection_diagnostics(),
             "metadata": {
                 "api_contract_version": metadata.get("api_contract_version"),

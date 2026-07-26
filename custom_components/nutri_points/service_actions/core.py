@@ -15,6 +15,7 @@ from custom_components.nutri_points.const import (
     SERVICE_ATTR_DRINK_TYPE_NAME,
     SERVICE_ATTR_FAT_G,
     SERVICE_ATTR_FIBER_G,
+    SERVICE_ATTR_GRAMS,
     SERVICE_ATTR_KCAL,
     SERVICE_ATTR_LOGGED_AT,
     SERVICE_ATTR_MEAL_TYPE,
@@ -24,19 +25,25 @@ from custom_components.nutri_points.const import (
     SERVICE_ATTR_POINTS,
     SERVICE_ATTR_PRESET_ID,
     SERVICE_ATTR_PROTEIN_G,
+    SERVICE_ATTR_SESSION_ID,
     SERVICE_ATTR_STEPS,
     SERVICE_ATTR_VOLUME_ML,
     SERVICE_ATTR_WEIGHT_KG,
+    SERVICE_CANCEL_WEIGHING_SESSION,
+    SERVICE_COMPLETE_WEIGHING_SESSION,
     SERVICE_LOG_ACTIVITY,
     SERVICE_LOG_DRINK,
     SERVICE_LOG_FOOD,
     SERVICE_LOG_WEIGHT,
+    SERVICE_PREVIEW_WEIGHING_SESSION,
+    SERVICE_PROJECT_WEIGHING_SESSION,
     SERVICE_SET_STEPS,
 )
 from custom_components.nutri_points.coordinator import NutriPointsDataUpdateCoordinator
-from custom_components.nutri_points.data import NutriPointsConfigEntry
+from custom_components.nutri_points.data import NutriPointsConfigEntry, NutriPointsRuntimeData
+from custom_components.nutri_points.weighing_sessions import NutriPointsWeighingSessionError
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .parsing import (
@@ -56,11 +63,14 @@ from .schemas import (
     DRINK_SERVICE_SCHEMA,
     FOOD_SERVICE_SCHEMA,
     STEPS_SERVICE_SCHEMA,
+    WEIGHING_CANCEL_SERVICE_SCHEMA,
+    WEIGHING_COMPLETION_SERVICE_SCHEMA,
+    WEIGHING_PROJECTION_SERVICE_SCHEMA,
     WEIGHT_SERVICE_SCHEMA,
 )
 
 
-def _resolve_entry_context(hass: HomeAssistant, call: ServiceCall) -> dict[str, Any]:
+def _resolve_entry_context(hass: HomeAssistant, call: ServiceCall) -> NutriPointsRuntimeData:
     entries = [entry for entry in hass.config_entries.async_entries(DOMAIN) if entry.state is ConfigEntryState.LOADED]
     requested_entry_id = call.data.get(CONF_ENTRY_ID)
 
@@ -77,14 +87,13 @@ def _resolve_entry_context(hass: HomeAssistant, call: ServiceCall) -> dict[str, 
 
     if entry.state is not ConfigEntryState.LOADED:
         raise ServiceValidationError("The Nutri Points config entry is not loaded.")
-    runtime = cast(NutriPointsConfigEntry, entry).runtime_data
-    return {"api_client": runtime.api_client, "coordinator": runtime.coordinator}
+    return cast(NutriPointsConfigEntry, entry).runtime_data
 
 
 async def _async_run_write(hass: HomeAssistant, call: ServiceCall, *, operation: str) -> None:
     entry_ctx = _resolve_entry_context(hass, call)
-    api_client: NutriPointsApiClient = entry_ctx["api_client"]
-    coordinator: NutriPointsDataUpdateCoordinator = entry_ctx["coordinator"]
+    api_client: NutriPointsApiClient = entry_ctx.api_client
+    coordinator: NutriPointsDataUpdateCoordinator = entry_ctx.coordinator
 
     applies_to_date = await _async_parse_optional_date(
         hass,
@@ -173,6 +182,61 @@ async def _async_run_write(hass: HomeAssistant, call: ServiceCall, *, operation:
     await coordinator.async_request_refresh()
 
 
+async def _async_weighing_action(hass: HomeAssistant, call: ServiceCall, *, operation: str) -> dict[str, Any]:
+    runtime = _resolve_entry_context(hass, call)
+    if not runtime.weighing_sessions_supported:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="weighing_sessions_unsupported",
+        )
+    session_id = await _async_parse_string(
+        hass,
+        call.data[SERVICE_ATTR_SESSION_ID],
+        SERVICE_ATTR_SESSION_ID,
+        min_length=1,
+        max_length=120,
+    )
+    try:
+        if operation == SERVICE_PROJECT_WEIGHING_SESSION:
+            grams = await _async_parse_float(
+                hass,
+                call.data[SERVICE_ATTR_GRAMS],
+                SERVICE_ATTR_GRAMS,
+                minimum=0,
+                maximum=100000,
+            )
+            return dict(runtime.weighing_sessions.project(session_id, grams))
+        if operation == SERVICE_PREVIEW_WEIGHING_SESSION:
+            grams = await _async_parse_float(
+                hass,
+                call.data[SERVICE_ATTR_GRAMS],
+                SERVICE_ATTR_GRAMS,
+                minimum=0,
+                maximum=100000,
+            )
+            return await runtime.weighing_sessions.async_preview(session_id, grams)
+        if operation == SERVICE_COMPLETE_WEIGHING_SESSION:
+            grams = await _async_parse_float(
+                hass,
+                call.data[SERVICE_ATTR_GRAMS],
+                SERVICE_ATTR_GRAMS,
+                minimum=0.000001,
+                maximum=100000,
+            )
+            return await runtime.weighing_sessions.async_complete(session_id, grams)
+        if operation == SERVICE_CANCEL_WEIGHING_SESSION:
+            return await runtime.weighing_sessions.async_cancel(session_id)
+        raise HomeAssistantError(f"Unsupported Nutri Points weighing operation '{operation}'.")
+    except NutriPointsWeighingSessionError as exc:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="weighing_session_invalid",
+            translation_placeholders={"message": str(exc)},
+        ) from exc
+    except NutriPointsApiError as exc:
+        raise HomeAssistantError(str(exc)) from exc
+
+
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register Nutri Points service actions once for the integration domain."""
     if hass.services.has_service(DOMAIN, SERVICE_LOG_FOOD):
@@ -192,6 +256,18 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def async_handle_set_steps(call: ServiceCall) -> None:
         await _async_run_write(hass, call, operation=SERVICE_SET_STEPS)
+
+    async def async_handle_project_weighing_session(call: ServiceCall) -> dict[str, Any]:
+        return await _async_weighing_action(hass, call, operation=SERVICE_PROJECT_WEIGHING_SESSION)
+
+    async def async_handle_preview_weighing_session(call: ServiceCall) -> dict[str, Any]:
+        return await _async_weighing_action(hass, call, operation=SERVICE_PREVIEW_WEIGHING_SESSION)
+
+    async def async_handle_complete_weighing_session(call: ServiceCall) -> dict[str, Any]:
+        return await _async_weighing_action(hass, call, operation=SERVICE_COMPLETE_WEIGHING_SESSION)
+
+    async def async_handle_cancel_weighing_session(call: ServiceCall) -> dict[str, Any]:
+        return await _async_weighing_action(hass, call, operation=SERVICE_CANCEL_WEIGHING_SESSION)
 
     hass.services.async_register(
         DOMAIN,
@@ -222,4 +298,32 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_SET_STEPS,
         async_handle_set_steps,
         schema=STEPS_SERVICE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PROJECT_WEIGHING_SESSION,
+        async_handle_project_weighing_session,
+        schema=WEIGHING_PROJECTION_SERVICE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PREVIEW_WEIGHING_SESSION,
+        async_handle_preview_weighing_session,
+        schema=WEIGHING_PROJECTION_SERVICE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_COMPLETE_WEIGHING_SESSION,
+        async_handle_complete_weighing_session,
+        schema=WEIGHING_COMPLETION_SERVICE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CANCEL_WEIGHING_SESSION,
+        async_handle_cancel_weighing_session,
+        schema=WEIGHING_CANCEL_SERVICE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
     )

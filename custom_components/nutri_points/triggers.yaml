@@ -19,6 +19,17 @@ food_logged:
       selector:
         select:
           options: [any, breakfast, lunch, dinner, snack]
+food_weighing_session_started:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: nutri_points
+    meal_type:
+      selector:
+        select:
+          options: [any, breakfast, lunch, dinner, snack]
 weigh_in_summary_generated:
   fields:
     entry_id:

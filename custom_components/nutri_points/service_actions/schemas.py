@@ -13,6 +13,7 @@ from custom_components.nutri_points.const import (
     SERVICE_ATTR_DRINK_TYPE_NAME,
     SERVICE_ATTR_FAT_G,
     SERVICE_ATTR_FIBER_G,
+    SERVICE_ATTR_GRAMS,
     SERVICE_ATTR_KCAL,
     SERVICE_ATTR_LOGGED_AT,
     SERVICE_ATTR_MEAL_TYPE,
@@ -22,6 +23,7 @@ from custom_components.nutri_points.const import (
     SERVICE_ATTR_POINTS,
     SERVICE_ATTR_PRESET_ID,
     SERVICE_ATTR_PROTEIN_G,
+    SERVICE_ATTR_SESSION_ID,
     SERVICE_ATTR_STEPS,
     SERVICE_ATTR_VOLUME_ML,
     SERVICE_ATTR_WEIGHT_KG,
@@ -81,6 +83,35 @@ STEPS_SERVICE_SCHEMA = vol.Schema(
         vol.Required(SERVICE_ATTR_STEPS): vol.Any(cv.template, vol.All(vol.Coerce(int), vol.Range(min=0))),
         vol.Optional(SERVICE_ATTR_MODE, default="replace_total"): vol.In(STEP_UPDATE_MODES),
         vol.Optional(SERVICE_ATTR_APPLIES_TO_DATE): vol.Any(cv.template, cv.date),
+        vol.Optional(CONF_ENTRY_ID): cv.string,
+    }
+)
+
+WEIGHING_PROJECTION_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required(SERVICE_ATTR_SESSION_ID): vol.Any(cv.template, vol.All(cv.string, vol.Length(min=1))),
+        vol.Required(SERVICE_ATTR_GRAMS): vol.Any(
+            cv.template,
+            vol.All(vol.Coerce(float), vol.Range(min=0, max=100000)),
+        ),
+        vol.Optional(CONF_ENTRY_ID): cv.string,
+    }
+)
+
+WEIGHING_COMPLETION_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required(SERVICE_ATTR_SESSION_ID): vol.Any(cv.template, vol.All(cv.string, vol.Length(min=1))),
+        vol.Required(SERVICE_ATTR_GRAMS): vol.Any(
+            cv.template,
+            vol.All(vol.Coerce(float), vol.Range(min=0, min_included=False, max=100000)),
+        ),
+        vol.Optional(CONF_ENTRY_ID): cv.string,
+    }
+)
+
+WEIGHING_CANCEL_SERVICE_SCHEMA = vol.Schema(
+    {
+        vol.Required(SERVICE_ATTR_SESSION_ID): vol.Any(cv.template, vol.All(cv.string, vol.Length(min=1))),
         vol.Optional(CONF_ENTRY_ID): cv.string,
     }
 )

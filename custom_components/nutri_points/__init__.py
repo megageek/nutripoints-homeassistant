@@ -21,12 +21,14 @@ from .const import (
     CONF_VERIFY_SSL,
     DOMAIN,
     PLATFORMS,
+    WEIGHING_SESSIONS_CAPABILITY,
 )
 from .coordinator import NutriPointsDataUpdateCoordinator, NutriPointsEventStreamListener, NutriPointsIdentityGuard
 from .data import NutriPointsConfigEntry, NutriPointsRuntimeData
 from .repairs import async_create_identity_mismatch_issue
 from .service_actions import async_setup_services
 from .utils import async_migrate_entity_registry, default_server_name
+from .weighing_sessions import NutriPointsWeighingSessionManager
 
 _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -85,6 +87,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: NutriPointsConfigEntry) 
         identity_guard=identity_guard,
     )
     await coordinator.async_config_entry_first_refresh()
+    weighing_sessions_supported = WEIGHING_SESSIONS_CAPABILITY in runtime.get("capabilities", [])
+    weighing_sessions = NutriPointsWeighingSessionManager(hass, entry.entry_id, api_client)
+    await weighing_sessions.async_initialize(refresh=weighing_sessions_supported)
 
     listener = NutriPointsEventStreamListener(
         api_client=api_client,
@@ -95,12 +100,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: NutriPointsConfigEntry) 
         entry_id=entry.entry_id,
         expected_server_uuid=entry.unique_id,
         identity_guard=identity_guard,
+        on_weighing_session_started=weighing_sessions.async_handle_started,
     )
     entry.runtime_data = NutriPointsRuntimeData(
         api_client=api_client,
         coordinator=coordinator,
         listener=listener,
         automation_events_supported=AUTOMATION_EVENTS_CAPABILITY in runtime.get("capabilities", []),
+        weighing_sessions_supported=weighing_sessions_supported,
+        weighing_sessions=weighing_sessions,
         runtime_metadata=runtime,
     )
 

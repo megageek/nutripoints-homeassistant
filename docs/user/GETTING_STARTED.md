@@ -14,7 +14,7 @@
 3. Go to **Settings → Devices & services → Add integration** and select **Nutri Points**.
 4. Enter the server base URL and API key. The flow validates the server and its API contract before saving.
 
-Only one Nutri Points server can be configured in a Home Assistant installation.
+Each Nutri Points server is configured as a separate entry and identified by its persistent server UUID.
 
 If upgrading from the formerly bundled component, remove or rename
 `custom_components/nutri_points`, restart, install this HACS repository, restart again,

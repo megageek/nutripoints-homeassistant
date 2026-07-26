@@ -43,6 +43,7 @@ async def _async_parse_float(
     field: str,
     *,
     minimum: float,
+    maximum: float | None = None,
 ) -> float:
     rendered = await _async_render_service_value(hass, value, field)
     try:
@@ -51,6 +52,8 @@ async def _async_parse_float(
         raise ServiceValidationError(f"'{field}' must resolve to a number.") from exc
     if parsed < minimum:
         raise ServiceValidationError(f"'{field}' must be >= {minimum}.")
+    if maximum is not None and parsed > maximum:
+        raise ServiceValidationError(f"'{field}' must be <= {maximum}.")
     return parsed
 
 

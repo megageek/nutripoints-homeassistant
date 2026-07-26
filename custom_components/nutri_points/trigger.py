@@ -14,7 +14,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.trigger import Trigger, TriggerActionRunner, TriggerConfig
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, automation_event_signal
+from .const import AUTOMATION_EVENTS_CAPABILITY, DOMAIN, WEIGHING_SESSIONS_CAPABILITY, automation_event_signal
 
 CONF_ENTRY_ID = "entry_id"
 CONF_TRIGGER_ACTION = "trigger_action"
@@ -27,14 +27,16 @@ class NutriPointsAutomationTrigger(Trigger):
 
     event_name: str
     allowed_actions: tuple[str, ...]
+    required_capability = AUTOMATION_EVENTS_CAPABILITY
 
     @classmethod
     async def async_validate_config(cls, hass: HomeAssistant, config: ConfigType) -> ConfigType:
-        options_schema = {
+        options_schema: dict[Any, Any] = {
             vol.Required(CONF_ENTRY_ID): cv.string,
-            vol.Optional(CONF_TRIGGER_ACTION, default=ANY): vol.In((ANY, *cls.allowed_actions)),
             vol.Optional(CONF_MEAL_TYPE, default=ANY): vol.In((ANY, "breakfast", "lunch", "dinner", "snack")),
         }
+        if cls.allowed_actions:
+            options_schema[vol.Optional(CONF_TRIGGER_ACTION, default=ANY)] = vol.In((ANY, *cls.allowed_actions))
         schema = vol.Schema({vol.Required(CONF_OPTIONS): options_schema})
         validated = cast(ConfigType, schema(config))
         options = validated[CONF_OPTIONS]
@@ -43,9 +45,16 @@ class NutriPointsAutomationTrigger(Trigger):
             entry is None
             or entry.domain != DOMAIN
             or entry.state is not ConfigEntryState.LOADED
-            or not entry.runtime_data.automation_events_supported
+            or (
+                cls.required_capability == AUTOMATION_EVENTS_CAPABILITY
+                and not entry.runtime_data.automation_events_supported
+            )
+            or (
+                cls.required_capability == WEIGHING_SESSIONS_CAPABILITY
+                and not entry.runtime_data.weighing_sessions_supported
+            )
         ):
-            raise vol.Invalid("This Nutri Points entry does not advertise durable automation events")
+            raise vol.Invalid("This Nutri Points entry does not advertise the required trigger capability")
         return validated
 
     def __init__(self, hass: HomeAssistant, config: TriggerConfig) -> None:
@@ -90,8 +99,15 @@ class RecipeBatchLabelTrigger(NutriPointsAutomationTrigger):
     allowed_actions = ("recipe_batch_created", "recipe_batch_reprinted")
 
 
+class FoodWeighingSessionStartedTrigger(NutriPointsAutomationTrigger):
+    event_name = "food_weighing_session_started"
+    allowed_actions = ()
+    required_capability = WEIGHING_SESSIONS_CAPABILITY
+
+
 TRIGGERS: dict[str, type[Trigger]] = {
     "food_logged": FoodLoggedTrigger,
+    "food_weighing_session_started": FoodWeighingSessionStartedTrigger,
     "weigh_in_summary_generated": WeighInSummaryTrigger,
     "recipe_batch_label_requested": RecipeBatchLabelTrigger,
 }

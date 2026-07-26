@@ -1,2 +1,2 @@
 # renovate: datasource=github-releases depName=megageek/nutripoints-api-contracts versioning=semver
-5.0.0
+7.0.0

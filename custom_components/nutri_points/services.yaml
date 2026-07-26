@@ -219,3 +219,93 @@ set_steps:
       required: false
       selector:
         text:
+
+project_weighing_session:
+  name: Project weighing session
+  description: Calculate advisory nutrition and points locally without contacting the Nutri Points server.
+  fields:
+    entry_id:
+      name: Server
+      description: Required when more than one Nutri Points server is loaded.
+      required: false
+      selector:
+        config_entry:
+          integration: nutri_points
+    session_id:
+      name: Session ID
+      description: Weighing session identifier from the session-start trigger. Supports templates.
+      required: true
+      selector:
+        text:
+    grams:
+      name: Weight (g)
+      description: Weight from 0 through 100000 grams. Supports templates.
+      required: true
+      selector:
+        text:
+
+preview_weighing_session:
+  name: Preview weighing session
+  description: Ask Nutri Points for the authoritative nutrition and points preview.
+  fields:
+    entry_id:
+      name: Server
+      description: Required when more than one Nutri Points server is loaded.
+      required: false
+      selector:
+        config_entry:
+          integration: nutri_points
+    session_id:
+      name: Session ID
+      description: Weighing session identifier from the session-start trigger. Supports templates.
+      required: true
+      selector:
+        text:
+    grams:
+      name: Weight (g)
+      description: Weight from 0 through 100000 grams. Supports templates.
+      required: true
+      selector:
+        text:
+
+complete_weighing_session:
+  name: Complete weighing session
+  description: Complete the session and create the authoritative Nutri Points food log.
+  fields:
+    entry_id:
+      name: Server
+      description: Required when more than one Nutri Points server is loaded.
+      required: false
+      selector:
+        config_entry:
+          integration: nutri_points
+    session_id:
+      name: Session ID
+      description: Weighing session identifier from the session-start trigger. Supports templates.
+      required: true
+      selector:
+        text:
+    grams:
+      name: Weight (g)
+      description: Weight greater than 0 and no more than 100000 grams. Supports templates.
+      required: true
+      selector:
+        text:
+
+cancel_weighing_session:
+  name: Cancel weighing session
+  description: Cancel an active Nutri Points food weighing session.
+  fields:
+    entry_id:
+      name: Server
+      description: Required when more than one Nutri Points server is loaded.
+      required: false
+      selector:
+        config_entry:
+          integration: nutri_points
+    session_id:
+      name: Session ID
+      description: Weighing session identifier from the session-start trigger. Supports templates.
+      required: true
+      selector:
+        text:

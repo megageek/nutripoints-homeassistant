@@ -7,7 +7,7 @@ from typing import Any, Self
 from nutripoints_api_contract import available_generations, load_json
 import pytest
 
-from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsContractError
+from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsContractError, NutriPointsSessionError
 
 
 class FakeResponse:
@@ -72,12 +72,16 @@ async def test_client_rejects_unknown_contract_generation() -> None:
         "8f13a050-cc4c-1f89-aaf8-5badb51cbf5d",
     ],
 )
-async def test_v5_rejects_invalid_server_uuid(server_uuid: object) -> None:
-    """V5 requires a lowercase canonical UUIDv4 server identity."""
+@pytest.mark.parametrize("generation", ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7"])
+async def test_identity_generations_reject_invalid_server_uuid(
+    server_uuid: object,
+    generation: str,
+) -> None:
+    """V5 and newer require a lowercase canonical UUIDv4 server identity."""
     session = FakeSession(
         FakeResponse(
             {
-                "api_contract_version": "2026-07-24.stable-rw-v5",
+                "api_contract_version": f"2026-07-24.{generation}",
                 "server_uuid": server_uuid,
             }
         )
@@ -117,3 +121,44 @@ async def test_write_uses_bearer_and_retry_identifiers() -> None:
     assert call["url"].endswith("/api/v1/logs/activity")
     assert call["headers"]["Authorization"] == "Bearer npk_test"
     assert call["headers"]["Idempotency-Key"] == call["headers"]["X-Client-Mutation-Id"]
+
+
+async def test_weighing_session_client_methods() -> None:
+    """Session operations use the published v7 paths and mutation identifiers."""
+    session = FakeSession(FakeResponse({"id": "session-1"}))
+    client = NutriPointsApiClient(session=session, base_url="http://nutri.local", api_key="npk_test")
+
+    await client.async_get_weighing_session("session-1")
+    await client.async_preview_weighing_session("session-1", 40)
+    await client.async_complete_weighing_session("session-1", 40)
+    await client.async_cancel_weighing_session("session-1")
+
+    assert [(call["method"], call["url"].removeprefix("http://nutri.local")) for call in session.calls] == [
+        ("GET", "/api/v1/weighing-sessions/session-1"),
+        ("POST", "/api/v1/weighing-sessions/session-1/preview"),
+        ("POST", "/api/v1/weighing-sessions/session-1/complete"),
+        ("POST", "/api/v1/weighing-sessions/session-1/cancel"),
+    ]
+    assert "Idempotency-Key" not in session.calls[0]["headers"]
+    assert all("Idempotency-Key" in call["headers"] for call in session.calls[1:])
+
+
+async def test_weighing_session_stable_error_is_typed() -> None:
+    """Published session error codes remain available to callers."""
+    session = FakeSession(
+        FakeResponse(
+            {
+                "detail": {
+                    "error_code": "food_weighing_session_expired",
+                    "message": "The weighing session expired.",
+                }
+            },
+            status=409,
+        )
+    )
+    client = NutriPointsApiClient(session=session, base_url="http://nutri.local", api_key="npk_test")
+
+    with pytest.raises(NutriPointsSessionError) as caught:
+        await client.async_preview_weighing_session("session-1", 40)
+
+    assert caught.value.error_code == "food_weighing_session_expired"

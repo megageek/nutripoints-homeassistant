@@ -10,7 +10,7 @@ import pytest
 import voluptuous as vol
 
 from custom_components.nutri_points.const import DOMAIN, automation_event_signal
-from custom_components.nutri_points.trigger import FoodLoggedTrigger
+from custom_components.nutri_points.trigger import FoodLoggedTrigger, FoodWeighingSessionStartedTrigger
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_OPTIONS
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -55,3 +55,42 @@ async def test_trigger_rejects_server_without_capability(hass) -> None:
 
     with pytest.raises(vol.Invalid, match="does not advertise"):
         await FoodLoggedTrigger.async_validate_config(hass, {CONF_OPTIONS: {"entry_id": "entry-1"}})
+
+
+async def test_weighing_trigger_exposes_calculation_descriptor(hass) -> None:
+    """Weighing triggers pass immutable calculation data to device automations."""
+    entry = SimpleNamespace(
+        domain=DOMAIN,
+        state=ConfigEntryState.LOADED,
+        runtime_data=SimpleNamespace(
+            automation_events_supported=True,
+            weighing_sessions_supported=True,
+        ),
+    )
+    hass.config_entries.async_get_entry = Mock(return_value=entry)
+    options = {"entry_id": "entry-1", "meal_type": "breakfast"}
+    validated = await FoodWeighingSessionStartedTrigger.async_validate_config(hass, {CONF_OPTIONS: options})
+    trigger = FoodWeighingSessionStartedTrigger(
+        hass,
+        TriggerConfig(key="food_weighing_session_started", options=validated[CONF_OPTIONS]),
+    )
+    received = asyncio.Event()
+    runner = Mock(side_effect=lambda *_args: received.set())
+    remove = await trigger.async_attach_runner(runner)
+    payload = {
+        "id": "session-1",
+        "meal_type": "breakfast",
+        "nutrition_per_100g": {"protein_g": 12.5},
+        "points_calculation": {"version": "food_points_macros_v1", "rounding": "half_up"},
+    }
+
+    async_dispatcher_send(
+        hass,
+        automation_event_signal("entry-1"),
+        "food_weighing_session_started",
+        payload,
+    )
+    await asyncio.wait_for(received.wait(), timeout=1)
+    remove()
+
+    assert runner.call_args.args[0] == payload

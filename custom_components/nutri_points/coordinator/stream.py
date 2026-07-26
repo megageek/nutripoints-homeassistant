@@ -50,6 +50,7 @@ class NutriPointsEventStreamListener:
         entry_id: str | None = None,
         expected_server_uuid: str | None = None,
         identity_guard: NutriPointsIdentityGuard | None = None,
+        on_weighing_session_started: Callable[[dict[str, Any]], Awaitable[dict[str, Any]]] | None = None,
     ) -> None:
         self._api_client = api_client
         self._coordinator = coordinator
@@ -62,6 +63,7 @@ class NutriPointsEventStreamListener:
         self._entry_id = entry_id
         self._expected_server_uuid = expected_server_uuid
         self._identity_guard = identity_guard
+        self._on_weighing_session_started = on_weighing_session_started
         self._cursor: int | None = None
         self._cursor_store = Store(hass, 1, f"{DOMAIN}.{entry_id}.automation_cursor") if hass and entry_id else None
 
@@ -142,6 +144,12 @@ class NutriPointsEventStreamListener:
                             await self._on_day_status_changed()
                         except Exception as exc:  # pragma: no cover - coordinator refresh safety
                             self._logger.warning("Nutri Points refresh after SSE event failed: %s", exc)
+                    if event_name == "food_weighing_session_started" and self._on_weighing_session_started is not None:
+                        try:
+                            payload = await self._on_weighing_session_started(payload)
+                        except ValueError as exc:
+                            self._logger.warning("Nutri Points rejected an invalid weighing-session event: %s", exc)
+                            event_name = ""
                     if event_name in AUTOMATION_EVENT_NAMES and self._hass is not None and self._entry_id is not None:
                         async_dispatcher_send(self._hass, automation_event_signal(self._entry_id), event_name, payload)
                     if event_id is not None:

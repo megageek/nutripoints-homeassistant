@@ -127,6 +127,14 @@
       }
     }
   },
+  "exceptions": {
+    "weighing_sessions_unsupported": {
+      "message": "This Nutri Points server does not support food weighing sessions."
+    },
+    "weighing_session_invalid": {
+      "message": "The food weighing session could not be used: {message}"
+    }
+  },
   "issues": {
     "automation_replay_gap": {
       "title": "Some Nutri Points automation events could not be replayed",
