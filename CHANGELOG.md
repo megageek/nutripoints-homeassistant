@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.1...v0.3.2) (2026-07-26)
+
+
+### Bug Fixes
+
+* **triggers:** add automation UI metadata ([f5fe5af](https://github.com/megageek/nutripoints-homeassistant/commit/f5fe5af13ed92d253ec5b846f93f0bc109710812))
+
 ## [0.3.1](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.0...v0.3.1) (2026-07-26)
 
 
