@@ -64,7 +64,13 @@ class NutriPointsAutomationTrigger(Trigger):
         self._trigger_action = str(options.get(CONF_TRIGGER_ACTION, ANY))
         self._meal_type = str(options.get(CONF_MEAL_TYPE, ANY))
 
-    async def async_attach_runner(self, run_action: TriggerActionRunner) -> CALLBACK_TYPE:
+    async def async_attach_runner(
+        self,
+        run_action: TriggerActionRunner,
+        _did_not_trigger: object | None = None,
+    ) -> CALLBACK_TYPE:
+        """Attach the trigger to an action runner."""
+
         @callback
         def handle_event(event_name: str, payload: dict[str, Any]) -> None:
             if event_name != self.event_name:
