@@ -27,6 +27,7 @@ async def async_get_config_entry_diagnostics(
             "state": entry.state.value,
             "version": entry.version,
             "minor_version": entry.minor_version,
+            "unique_id": entry.unique_id,
         },
         "runtime": {
             "automation_events_supported": runtime.automation_events_supported,
@@ -35,6 +36,7 @@ async def async_get_config_entry_diagnostics(
                 "api_contract_version": metadata.get("api_contract_version"),
                 "capabilities": metadata.get("capabilities"),
                 "version": metadata.get("version"),
+                "server_uuid": metadata.get("server_uuid"),
             },
         },
     }

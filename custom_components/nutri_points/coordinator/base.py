@@ -4,13 +4,20 @@ from datetime import UTC, datetime, timedelta
 import logging
 from typing import Any
 
-from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsApiError, NutriPointsAuthError
+from custom_components.nutri_points.api import (
+    NutriPointsApiClient,
+    NutriPointsApiError,
+    NutriPointsAuthError,
+    NutriPointsIdentityMismatchError,
+)
 from custom_components.nutri_points.const import DOMAIN
 from custom_components.nutri_points.repairs import NutriPointsRuntimeIssueTracker
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+from .identity import NutriPointsIdentityGuard
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +30,7 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         api_client: NutriPointsApiClient,
         poll_interval_seconds: int,
         config_entry: ConfigEntry,
+        identity_guard: NutriPointsIdentityGuard | None = None,
     ) -> None:
         super().__init__(
             hass,
@@ -32,6 +40,7 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             config_entry=config_entry,
         )
         self.api_client = api_client
+        self.identity_guard = identity_guard
         self.last_error: str | None = None
         self.last_weight_error: str | None = None
         self.last_readiness_error: str | None = None
@@ -90,6 +99,13 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "day_status_available": self.day_status_available,
             "weight_available": self.weight_available,
             "readiness_available": self.readiness_available,
+            "configured_server_uuid": self.config_entry.unique_id if self.config_entry else None,
+            "identity_mismatch_latched": self.identity_guard is not None and self.identity_guard.mismatch is not None,
+            "observed_server_uuid": (
+                self.identity_guard.mismatch.observed_uuid
+                if self.identity_guard is not None and self.identity_guard.mismatch is not None
+                else None
+            ),
         }
         diagnostics.update({f"poll_{key}": value for key, value in self.poll_runtime_issues.diagnostics().items()})
         diagnostics.update({f"stream_{key}": value for key, value in self.stream_runtime_issues.diagnostics().items()})
@@ -137,8 +153,12 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
 
     async def _async_update_data(self) -> dict[str, Any]:
+        if self.identity_guard is not None and self.identity_guard.mismatch is not None:
+            raise UpdateFailed(str(self.identity_guard.mismatch))
         try:
             self.last_error = None
+            if self.config_entry is not None and self.config_entry.unique_id is not None:
+                await self.api_client.async_validate_identity(self.config_entry.unique_id)
             data = await self.api_client.async_get_today_status()
             self.last_successful_poll_at = self._utc_now_iso()
             self.day_status_available = True
@@ -150,6 +170,14 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.readiness_available = False
             self.record_poll_failure(exc)
             raise ConfigEntryAuthFailed(str(exc)) from exc
+        except NutriPointsIdentityMismatchError as exc:
+            self.last_error = str(exc)
+            self.day_status_available = False
+            self.weight_available = False
+            self.readiness_available = False
+            if self.identity_guard is not None:
+                await self.identity_guard.async_handle_mismatch(exc)
+            raise UpdateFailed(str(exc)) from exc
         except NutriPointsApiError as exc:
             self.last_error = str(exc)
             self.day_status_available = False

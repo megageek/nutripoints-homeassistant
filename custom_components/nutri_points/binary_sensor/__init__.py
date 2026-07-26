@@ -8,11 +8,11 @@ from custom_components.nutri_points.const import (
     ATTR_LAST_ERROR,
     CONF_LOW_POINTS_THRESHOLD,
     DEFAULT_LOW_POINTS_THRESHOLD,
-    DOMAIN,
 )
 from custom_components.nutri_points.coordinator import NutriPointsDataUpdateCoordinator
 from custom_components.nutri_points.data import NutriPointsConfigEntry
 from custom_components.nutri_points.entity import NutriPointsEntity
+from custom_components.nutri_points.utils import entity_unique_id
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -124,7 +124,7 @@ class NutriPointsBinarySensor(BinarySensorEntity, NutriPointsEntity):
         super().__init__(coordinator=coordinator, entry=entry)
         self.entity_description = description
         self._low_points_threshold = low_points_threshold
-        self._attr_unique_id = f"{DOMAIN}_{description.key}"
+        self._attr_unique_id = entity_unique_id(entry, description.key)
 
     @property
     def is_on(self) -> bool:
@@ -164,7 +164,7 @@ class NutriPointsWeighInDueBinarySensor(BinarySensorEntity, NutriPointsEntity):
         entry: NutriPointsConfigEntry,
     ) -> None:
         super().__init__(coordinator=coordinator, entry=entry)
-        self._attr_unique_id = f"{DOMAIN}_weigh_in_due"
+        self._attr_unique_id = entity_unique_id(entry, "weigh_in_due")
         self._attr_translation_key = "weigh_in_due"
         self._attr_icon = "mdi:scale-bathroom"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM

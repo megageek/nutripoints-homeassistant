@@ -50,7 +50,8 @@ async def test_client_accepts_each_published_generation(generation: str) -> None
     session = FakeSession(FakeResponse(fixtures["runtime"]))
     client = NutriPointsApiClient(session=session, base_url="http://nutri.local", api_key="npk_test")
 
-    assert await client.async_validate_runtime() == fixtures["runtime"]
+    expected = {**fixtures["runtime"], "server_uuid": fixtures["runtime"].get("server_uuid")}
+    assert await client.async_validate_runtime() == expected
 
 
 async def test_client_rejects_unknown_contract_generation() -> None:
@@ -59,6 +60,35 @@ async def test_client_rejects_unknown_contract_generation() -> None:
     client = NutriPointsApiClient(session=session, base_url="http://nutri.local", api_key="npk_test")
 
     with pytest.raises(NutriPointsContractError, match="incompatible"):
+        await client.async_validate_runtime()
+
+
+@pytest.mark.parametrize(
+    "server_uuid",
+    [
+        None,
+        "not-a-uuid",
+        "8F13A050-CC4C-4F89-AAF8-5BADB51CBF5D",
+        "8f13a050-cc4c-1f89-aaf8-5badb51cbf5d",
+    ],
+)
+async def test_v5_rejects_invalid_server_uuid(server_uuid: object) -> None:
+    """V5 requires a lowercase canonical UUIDv4 server identity."""
+    session = FakeSession(
+        FakeResponse(
+            {
+                "api_contract_version": "2026-07-24.stable-rw-v5",
+                "server_uuid": server_uuid,
+            }
+        )
+    )
+    client = NutriPointsApiClient(
+        session=session,
+        base_url="http://nutri.local",
+        api_key="npk_test",
+    )
+
+    with pytest.raises(NutriPointsContractError, match="server_uuid"):
         await client.async_validate_runtime()
 
 

@@ -61,17 +61,19 @@ from .schemas import (
 
 
 def _resolve_entry_context(hass: HomeAssistant, call: ServiceCall) -> dict[str, Any]:
-    entries = hass.config_entries.async_entries(DOMAIN)
+    entries = [entry for entry in hass.config_entries.async_entries(DOMAIN) if entry.state is ConfigEntryState.LOADED]
     requested_entry_id = call.data.get(CONF_ENTRY_ID)
 
     if requested_entry_id:
         entry = hass.config_entries.async_get_entry(requested_entry_id)
         if entry is None or entry.domain != DOMAIN:
             raise ServiceValidationError(f"Nutri Points entry '{requested_entry_id}' was not found.")
-    elif entries:
+    elif len(entries) == 1:
         entry = entries[0]
+    elif len(entries) > 1:
+        raise ServiceValidationError("Multiple Nutri Points entries are loaded; provide entry_id.")
     else:
-        raise ServiceValidationError("Nutri Points integration is not configured.")
+        raise ServiceValidationError("No loaded Nutri Points config entry is available.")
 
     if entry.state is not ConfigEntryState.LOADED:
         raise ServiceValidationError("The Nutri Points config entry is not loaded.")

@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.nutri_points.const import DOMAIN, SERVICE_SET_STEPS
+from custom_components.nutri_points.const import CONF_ENTRY_ID, DOMAIN, SERVICE_SET_STEPS
 from custom_components.nutri_points.data import NutriPointsRuntimeData
 from custom_components.nutri_points.service_actions import async_setup_services
 from homeassistant.config_entries import ConfigEntryState
@@ -58,3 +58,48 @@ async def test_service_write_uses_loaded_runtime_and_refreshes(hass: HomeAssista
         applies_to_date=None,
     )
     coordinator.async_request_refresh.assert_awaited_once()
+
+
+async def test_service_requires_entry_id_with_multiple_loaded_entries(
+    hass: HomeAssistant,
+) -> None:
+    """Ambiguous writes are rejected and an explicit entry routes correctly."""
+    entries: list[MockConfigEntry] = []
+    clients: list[AsyncMock] = []
+    for entry_id in ("entry-one", "entry-two"):
+        api_client = AsyncMock()
+        coordinator = AsyncMock()
+        entry = MockConfigEntry(domain=DOMAIN, entry_id=entry_id)
+        entry.runtime_data = NutriPointsRuntimeData(
+            api_client=api_client,
+            coordinator=coordinator,
+            listener=AsyncMock(),
+            automation_events_supported=False,
+            runtime_metadata={},
+        )
+        entry.add_to_hass(hass)
+        entry.mock_state(hass, ConfigEntryState.LOADED)
+        entries.append(entry)
+        clients.append(api_client)
+    async_setup_services(hass)
+
+    with pytest.raises(ServiceValidationError, match="Multiple"):
+        await hass.services.async_call(
+            DOMAIN,
+            SERVICE_SET_STEPS,
+            {"steps": 1000},
+            blocking=True,
+        )
+
+    await hass.services.async_call(
+        DOMAIN,
+        SERVICE_SET_STEPS,
+        {
+            CONF_ENTRY_ID: entries[1].entry_id,
+            "steps": 2000,
+        },
+        blocking=True,
+    )
+
+    clients[0].async_set_steps.assert_not_awaited()
+    clients[1].async_set_steps.assert_awaited_once()

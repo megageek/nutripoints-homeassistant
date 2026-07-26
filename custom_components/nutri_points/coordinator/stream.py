@@ -11,6 +11,7 @@ from custom_components.nutri_points.api import (
     NutriPointsApiClient,
     NutriPointsApiError,
     NutriPointsAuthError,
+    NutriPointsIdentityMismatchError,
     NutriPointsReplayGapError,
 )
 from custom_components.nutri_points.const import (
@@ -27,6 +28,7 @@ from homeassistant.helpers.storage import Store
 
 if TYPE_CHECKING:
     from .base import NutriPointsDataUpdateCoordinator
+    from .identity import NutriPointsIdentityGuard
 
 REFRESH_EVENT_NAMES = {
     "day_status_changed",
@@ -46,6 +48,8 @@ class NutriPointsEventStreamListener:
         logger: logging.Logger,
         hass: Any | None = None,
         entry_id: str | None = None,
+        expected_server_uuid: str | None = None,
+        identity_guard: NutriPointsIdentityGuard | None = None,
     ) -> None:
         self._api_client = api_client
         self._coordinator = coordinator
@@ -56,6 +60,8 @@ class NutriPointsEventStreamListener:
         self._last_logged_error: str | None = None
         self._hass = hass
         self._entry_id = entry_id
+        self._expected_server_uuid = expected_server_uuid
+        self._identity_guard = identity_guard
         self._cursor: int | None = None
         self._cursor_store = Store(hass, 1, f"{DOMAIN}.{entry_id}.automation_cursor") if hass and entry_id else None
 
@@ -119,6 +125,10 @@ class NutriPointsEventStreamListener:
         while not self._stop_event.is_set():
             self._coordinator.mark_stream_connecting()
             try:
+                if self._identity_guard is not None and self._identity_guard.mismatch is not None:
+                    return
+                if self._expected_server_uuid is not None:
+                    await self._api_client.async_validate_identity(self._expected_server_uuid)
                 async for event_id, event_name, payload in self._api_client.async_stream_home_assistant_events(
                     on_connect=self._handle_stream_connected,
                     last_event_id=self._cursor,
@@ -146,6 +156,11 @@ class NutriPointsEventStreamListener:
                     await self._save_cursor(exc.latest_event_id)
                 self._create_replay_gap_issue()
                 self._coordinator.mark_stream_backoff(str(exc))
+            except NutriPointsIdentityMismatchError as exc:
+                self._coordinator.mark_stream_backoff(str(exc))
+                if self._identity_guard is not None:
+                    await self._identity_guard.async_handle_mismatch(exc)
+                return
             except NutriPointsAuthError as exc:
                 error_message = str(exc)
                 self._coordinator.mark_stream_backoff(error_message)

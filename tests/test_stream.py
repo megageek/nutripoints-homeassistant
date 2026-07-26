@@ -6,7 +6,7 @@ import asyncio
 import logging
 from unittest.mock import AsyncMock
 
-from custom_components.nutri_points.api import NutriPointsApiError
+from custom_components.nutri_points.api import NutriPointsApiError, NutriPointsIdentityMismatchError
 from custom_components.nutri_points.coordinator import NutriPointsEventStreamListener
 
 
@@ -102,3 +102,34 @@ async def test_stream_records_api_failure_before_reconnect(monkeypatch) -> None:
 
     assert coordinator.failures == ["temporary"]
     assert coordinator.connected == 1
+
+
+async def test_stream_stops_on_server_identity_mismatch() -> None:
+    """SSE does not connect when runtime metadata identifies a replacement server."""
+    expected_uuid = "8f13a050-cc4c-4f89-aaf8-5badb51cbf5d"
+    observed_uuid = "9d4245b1-80e2-4eb5-b174-e20795f3f2e7"
+    coordinator = FakeCoordinator()
+    guard = AsyncMock()
+    guard.mismatch = None
+    handled = asyncio.Event()
+    guard.async_handle_mismatch.side_effect = lambda _exc: handled.set()
+    api = AsyncMock()
+    api.async_validate_identity.side_effect = NutriPointsIdentityMismatchError(
+        expected_uuid,
+        observed_uuid,
+    )
+    listener = NutriPointsEventStreamListener(
+        api_client=api,
+        coordinator=coordinator,
+        on_day_status_changed=AsyncMock(),
+        logger=logging.getLogger(__name__),
+        expected_server_uuid=expected_uuid,
+        identity_guard=guard,
+    )
+
+    listener.start()
+    await asyncio.wait_for(handled.wait(), timeout=1)
+    await listener.stop()
+
+    guard.async_handle_mismatch.assert_awaited_once()
+    api.async_stream_home_assistant_events.assert_not_called()

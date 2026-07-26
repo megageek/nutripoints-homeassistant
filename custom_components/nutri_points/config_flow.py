@@ -8,7 +8,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult, OptionsFlowWithReload
-from homeassistant.const import CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_NAME, CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -19,6 +19,7 @@ from .api import (
     NutriPointsContractError,
     NutriPointsHttpApiKeyForbiddenError,
     NutriPointsInvalidHostError,
+    NutriPointsRuntimeMetadata,
     NutriPointsTlsError,
     NutriPointsUnexpectedServerError,
 )
@@ -37,6 +38,7 @@ from .const import (
     MIN_LOW_POINTS_THRESHOLD,
     MIN_POLL_INTERVAL_SECONDS,
 )
+from .utils import default_server_name
 
 
 def _normalize_config(
@@ -48,6 +50,7 @@ def _normalize_config(
         api_key_value = str(existing.get(CONF_API_KEY, "")).strip()
     return {
         **existing,
+        CONF_NAME: str(user_input[CONF_NAME]).strip(),
         CONF_BASE_URL: str(user_input[CONF_BASE_URL]).strip().rstrip("/"),
         CONF_API_KEY: api_key_value,
         CONF_POLL_INTERVAL_SECONDS: int(user_input[CONF_POLL_INTERVAL_SECONDS]),
@@ -70,6 +73,7 @@ def _validate_base_url(base_url: str) -> None:
 
 def _user_schema(defaults: dict[str, Any] | None = None, *, api_key_required: bool = True) -> vol.Schema:
     defaults = defaults or {}
+    default_base_url = str(defaults.get(CONF_BASE_URL, "http://localhost:8000"))
     api_key_field = (
         vol.Required(CONF_API_KEY, default=defaults.get(CONF_API_KEY, ""))
         if api_key_required
@@ -80,7 +84,11 @@ def _user_schema(defaults: dict[str, Any] | None = None, *, api_key_required: bo
     )
     return vol.Schema(
         {
-            vol.Required(CONF_BASE_URL, default=defaults.get(CONF_BASE_URL, "http://localhost:8000")): str,
+            vol.Required(
+                CONF_NAME,
+                default=defaults.get(CONF_NAME, default_server_name(default_base_url)),
+            ): vol.All(str, vol.Strip, vol.Length(min=1, max=64)),
+            vol.Required(CONF_BASE_URL, default=default_base_url): str,
             api_key_field: str,
             vol.Required(
                 CONF_POLL_INTERVAL_SECONDS,
@@ -120,22 +128,58 @@ def _apply_validation_error(errors: dict[str, str], exc: Exception) -> None:
 
 class NutriPointsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 2
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
+    _pending_reconfigure: dict[str, Any]
+    _pending_server_uuid: str
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Create the single supported Nutri Points entry."""
-        if self._async_current_entries():
-            return self.async_abort(reason="single_instance_allowed")
+        """Create or update a UUID-identified Nutri Points server entry."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
             try:
                 normalized = _normalize_config(user_input)
                 _validate_base_url(normalized[CONF_BASE_URL])
-                await _async_validate(self.hass, normalized)
-                return self.async_create_entry(title=f"Nutri Points ({normalized[CONF_BASE_URL]})", data=normalized)
+                runtime = await _async_validate(self.hass, normalized)
+                server_uuid = runtime["server_uuid"]
+                if server_uuid is None:
+                    errors["base"] = "identity_required"
+                    raise ValueError("identity_required")
+                current_entries = self._async_current_entries()
+                entry = next(
+                    (
+                        current_entry
+                        for current_entry in current_entries
+                        if current_entry.unique_id == server_uuid
+                        or (
+                            current_entry.unique_id is None
+                            and current_entry.data.get(CONF_BASE_URL) == normalized[CONF_BASE_URL]
+                        )
+                    ),
+                    None,
+                )
+                if entry is not None:
+                    updated = {
+                        **entry.data,
+                        CONF_NAME: normalized[CONF_NAME],
+                        CONF_BASE_URL: normalized[CONF_BASE_URL],
+                        CONF_API_KEY: normalized[CONF_API_KEY],
+                        CONF_VERIFY_SSL: normalized[CONF_VERIFY_SSL],
+                    }
+                    self.hass.config_entries.async_update_entry(
+                        entry,
+                        data=updated,
+                        title=normalized[CONF_NAME],
+                        unique_id=server_uuid,
+                    )
+                    await self.hass.config_entries.async_reload(entry.entry_id)
+                    return self.async_abort(reason="already_configured")
+                await self.async_set_unique_id(server_uuid)
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(title=normalized[CONF_NAME], data=normalized)
             except (NutriPointsApiError, ValueError, KeyError) as exc:
-                _apply_validation_error(errors, exc)
+                if not errors:
+                    _apply_validation_error(errors, exc)
 
         return self.async_show_form(step_id="user", data_schema=_user_schema(user_input), errors=errors)
 
@@ -158,10 +202,12 @@ class NutriPointsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             updated = {**entry.data, CONF_API_KEY: str(user_input[CONF_API_KEY]).strip()}
             try:
-                await _async_validate(self.hass, updated)
+                runtime = await _async_validate(self.hass, updated)
+                if entry.unique_id is not None and runtime["server_uuid"] != entry.unique_id:
+                    errors["base"] = "different_server_configured"
             except (NutriPointsApiError, ValueError, KeyError) as exc:
                 _apply_validation_error(errors, exc)
-            else:
+            if not errors:
                 return self.async_update_reload_and_abort(
                     entry,
                     data_updates={CONF_API_KEY: updated[CONF_API_KEY]},
@@ -180,26 +226,33 @@ class NutriPointsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             updated = {
                 **entry.data,
+                CONF_NAME: str(user_input[CONF_NAME]).strip(),
                 CONF_BASE_URL: str(user_input[CONF_BASE_URL]).strip().rstrip("/"),
                 CONF_VERIFY_SSL: bool(user_input[CONF_VERIFY_SSL]),
             }
             try:
                 _validate_base_url(updated[CONF_BASE_URL])
-                await _async_validate(self.hass, updated)
+                runtime = await _async_validate(self.hass, updated)
+                server_uuid = runtime["server_uuid"]
+                if server_uuid is None:
+                    errors["base"] = "identity_required"
+                elif any(
+                    current_entry.entry_id != entry.entry_id and current_entry.unique_id == server_uuid
+                    for current_entry in self._async_current_entries()
+                ):
+                    errors["base"] = "already_configured"
+                elif entry.unique_id is not None and server_uuid != entry.unique_id:
+                    self._pending_reconfigure = updated
+                    self._pending_server_uuid = server_uuid
+                    return await self.async_step_confirm_identity_replacement()
+                else:
+                    return await self._async_finish_reconfigure(entry, updated, server_uuid)
             except (NutriPointsApiError, ValueError, KeyError) as exc:
                 _apply_validation_error(errors, exc)
-            else:
-                return self.async_update_reload_and_abort(
-                    entry,
-                    data_updates={
-                        CONF_BASE_URL: updated[CONF_BASE_URL],
-                        CONF_VERIFY_SSL: updated[CONF_VERIFY_SSL],
-                    },
-                    title=f"Nutri Points ({updated[CONF_BASE_URL]})",
-                )
         schema = self.add_suggested_values_to_schema(
             vol.Schema(
                 {
+                    vol.Required(CONF_NAME): vol.All(str, vol.Strip, vol.Length(min=1, max=64)),
                     vol.Required(CONF_BASE_URL): str,
                     vol.Required(CONF_VERIFY_SSL): bool,
                 }
@@ -207,6 +260,43 @@ class NutriPointsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             entry.data,
         )
         return self.async_show_form(step_id="reconfigure", data_schema=schema, errors=errors)
+
+    async def async_step_confirm_identity_replacement(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Require explicit confirmation before adopting a replacement server."""
+        entry = self._get_reconfigure_entry()
+        if user_input is not None:
+            return await self._async_finish_reconfigure(
+                entry,
+                self._pending_reconfigure,
+                self._pending_server_uuid,
+            )
+        return self.async_show_form(
+            step_id="confirm_identity_replacement",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "expected_uuid": entry.unique_id or "unassigned",
+                "observed_uuid": self._pending_server_uuid,
+            },
+        )
+
+    async def _async_finish_reconfigure(
+        self,
+        entry: config_entries.ConfigEntry,
+        updated: dict[str, Any],
+        server_uuid: str,
+    ) -> ConfigFlowResult:
+        self.hass.config_entries.async_update_entry(entry, unique_id=server_uuid)
+        return self.async_update_reload_and_abort(
+            entry,
+            data_updates={
+                CONF_NAME: updated[CONF_NAME],
+                CONF_BASE_URL: updated[CONF_BASE_URL],
+                CONF_VERIFY_SSL: updated[CONF_VERIFY_SSL],
+            },
+            title=updated[CONF_NAME],
+        )
 
 
 class NutriPointsOptionsFlow(OptionsFlowWithReload):
@@ -248,11 +338,11 @@ class NutriPointsOptionsFlow(OptionsFlowWithReload):
         )
 
 
-async def _async_validate(hass: Any, config: Mapping[str, Any]) -> None:
+async def _async_validate(hass: Any, config: Mapping[str, Any]) -> NutriPointsRuntimeMetadata:
     client = NutriPointsApiClient(
         session=async_get_clientsession(hass),
         base_url=config[CONF_BASE_URL],
         api_key=config[CONF_API_KEY],
         verify_ssl=config.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL),
     )
-    await client.async_validate_runtime()
+    return await client.async_validate_runtime()

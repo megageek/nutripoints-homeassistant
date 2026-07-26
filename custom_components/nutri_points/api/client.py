@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Awaitable, Callable
 from datetime import datetime
 import json
-from typing import Any
-from uuid import uuid4
+from typing import Any, NotRequired, TypedDict, cast
+from uuid import UUID, uuid4
 
 from aiohttp import (
     ClientConnectorCertificateError,
@@ -22,6 +22,7 @@ from custom_components.nutri_points.const import (
     DRINK_SETTINGS_ENDPOINT,
     FOOD_LOG_ENDPOINT,
     HA_EVENTS_ENDPOINT,
+    IDENTITY_API_CONTRACT_TAG,
     READINESS_ENDPOINT,
     RUNTIME_ENDPOINT,
     STEPS_LOG_ENDPOINT,
@@ -42,6 +43,15 @@ class NutriPointsAuthError(NutriPointsApiError):
 
 class NutriPointsContractError(NutriPointsApiError):
     """Raised when runtime contract is incompatible."""
+
+
+class NutriPointsIdentityMismatchError(NutriPointsApiError):
+    """Raised when a URL starts serving a different Nutri Points installation."""
+
+    def __init__(self, expected_uuid: str, observed_uuid: str) -> None:
+        super().__init__(f"Nutri Points server identity changed from '{expected_uuid}' to '{observed_uuid}'.")
+        self.expected_uuid = expected_uuid
+        self.observed_uuid = observed_uuid
 
 
 class NutriPointsReplayGapError(NutriPointsApiError):
@@ -66,6 +76,27 @@ class NutriPointsTlsError(NutriPointsApiError):
 
 class NutriPointsUnexpectedServerError(NutriPointsApiError):
     """Raised when the remote server is reachable but does not look like Nutri Points."""
+
+
+class NutriPointsRuntimeMetadata(TypedDict):
+    """Validated Nutri Points runtime metadata."""
+
+    api_contract_version: str
+    server_uuid: str | None
+    capabilities: NotRequired[list[str]]
+    version: NotRequired[str]
+
+
+def _canonical_uuid4(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = UUID(value)
+    except ValueError:
+        return None
+    if parsed.version != 4 or str(parsed) != value:
+        return None
+    return value
 
 
 def _normalize_today_status_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -180,7 +211,7 @@ class NutriPointsApiClient:
             )
         raise NutriPointsApiError(f"Nutri Points API request failed: {response.status} {error_message}")
 
-    async def async_validate_runtime(self) -> dict[str, Any]:
+    async def async_validate_runtime(self) -> NutriPointsRuntimeMetadata:
         runtime = await self._request(method="GET", path=RUNTIME_ENDPOINT)
         if not isinstance(runtime, dict) or "api_contract_version" not in runtime:
             raise NutriPointsUnexpectedServerError(
@@ -193,6 +224,28 @@ class NutriPointsApiClient:
                 "Nutri Points API contract is incompatible. "
                 f"Expected one of [{expected}] in api_contract_version, got '{contract_version}'."
             )
+        server_uuid = _canonical_uuid4(runtime.get("server_uuid"))
+        if IDENTITY_API_CONTRACT_TAG in contract_version and server_uuid is None:
+            raise NutriPointsContractError(
+                "Nutri Points stable-rw-v5 runtime metadata must include a canonical UUIDv4 server_uuid."
+            )
+        return cast(
+            NutriPointsRuntimeMetadata,
+            {
+                **runtime,
+                "api_contract_version": contract_version,
+                "server_uuid": server_uuid,
+            },
+        )
+
+    async def async_validate_identity(self, expected_uuid: str) -> NutriPointsRuntimeMetadata:
+        """Validate runtime metadata and require the configured server identity."""
+        runtime = await self.async_validate_runtime()
+        observed_uuid = runtime["server_uuid"]
+        if observed_uuid is None:
+            raise NutriPointsContractError("Nutri Points server identity checks require stable-rw-v5 runtime metadata.")
+        if observed_uuid != expected_uuid:
+            raise NutriPointsIdentityMismatchError(expected_uuid, observed_uuid)
         return runtime
 
     async def async_get_today_status(self) -> dict[str, Any]:

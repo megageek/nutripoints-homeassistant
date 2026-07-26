@@ -5,6 +5,7 @@
         "title": "Connect Nutri Points",
         "description": "Configure Nutri Points API access for Home Assistant.",
         "data": {
+          "name": "Server name",
           "base_url": "Base URL",
           "api_key": "API key",
           "poll_interval_seconds": "Poll interval seconds",
@@ -12,6 +13,7 @@
           "verify_ssl": "Verify TLS certificates"
         },
         "data_description": {
+          "name": "A label used to distinguish this Nutri Points server in Home Assistant.",
           "base_url": "Use the full Nutri Points base URL with http:// or https:// and no extra path.",
           "api_key": "Create an API key in Nutri Points Settings and paste it here.",
           "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
@@ -28,13 +30,19 @@
         "title": "Reconfigure Nutri Points",
         "description": "Update the Nutri Points server connection.",
         "data": {
+          "name": "Server name",
           "base_url": "Base URL",
           "verify_ssl": "Verify TLS certificates"
         },
         "data_description": {
+          "name": "Changing the label does not change server identity or rename existing entities.",
           "base_url": "Use the full Nutri Points base URL with http:// or https:// and no extra path.",
           "verify_ssl": "Disable only when you intentionally use a self-signed or otherwise untrusted TLS certificate."
         }
+      },
+      "confirm_identity_replacement": {
+        "title": "Replace the Nutri Points server identity",
+        "description": "The server identity changed from {expected_uuid} to {observed_uuid}. Confirm only if you intentionally replaced or restored the Nutri Points server."
       }
     },
     "error": {
@@ -46,6 +54,8 @@
       "tls_failed": "TLS verification failed. Fix the server certificate or disable TLS verification only if you trust the server.",
       "unexpected_server": "Connected server did not behave like a Nutri Points API. Check the URL and reverse-proxy target.",
       "incompatible_contract": "Nutri Points API contract is not compatible.",
+      "identity_required": "This action requires a Nutri Points server using stable-rw-v5 with a persistent server identity.",
+      "different_server_configured": "A different Nutri Points server is already configured.",
       "invalid_input": "Invalid input provided."
     },
     "abort": {
@@ -141,6 +151,45 @@
     "runtime_transient_transport": {
       "title": "Nutri Points has repeated connection failures",
       "description": "Home Assistant has hit repeated runtime connection failures while talking to Nutri Points. Check that the Nutri Points server is reachable, then confirm the integration recovers after connectivity is restored."
+    },
+    "runtime_identity_mismatch": {
+      "title": "Nutri Points server identity changed",
+      "description": "The configured URL is serving a different Nutri Points installation. Use the identity repair to explicitly select the intended server."
+    },
+    "server_identity_mismatch": {
+      "title": "Nutri Points server identity changed",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Select the Nutri Points server",
+            "description": "The configured server identity changed. Enter the intended server connection. The stored API key will be reused.",
+            "data": {
+              "name": "Server name",
+              "base_url": "Base URL",
+              "verify_ssl": "Verify TLS certificates"
+            }
+          },
+          "confirm": {
+            "title": "Confirm replacement server",
+            "description": "Replace server identity {expected_uuid} with {observed_uuid}? Existing Home Assistant entities will be retained."
+          }
+        },
+        "error": {
+          "cannot_connect": "Failed to connect to Nutri Points.",
+          "invalid_auth": "The stored API key is not accepted by this server.",
+          "invalid_url": "Base URL must be a full http:// or https:// URL with no extra path, query, or fragment.",
+          "invalid_host": "Nutri Points rejected the Host header.",
+          "http_api_key_forbidden": "Nutri Points blocked API-key access from Home Assistant.",
+          "tls_failed": "TLS verification failed.",
+          "unexpected_server": "The URL did not return a Nutri Points runtime response.",
+          "incompatible_contract": "The server must provide a valid stable-rw-v5 identity.",
+          "already_configured": "This Nutri Points server identity is already configured by another entry."
+        },
+        "abort": {
+          "entry_missing": "The affected Nutri Points entry no longer exists.",
+          "validation_required": "Validate the replacement server before confirming it."
+        }
+      }
     }
   }
 }

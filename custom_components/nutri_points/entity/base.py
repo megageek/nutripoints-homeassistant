@@ -25,7 +25,7 @@ class NutriPointsEntity(CoordinatorEntity[NutriPointsDataUpdateCoordinator]):
         runtime = entry.runtime_data.runtime_metadata
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
-            name="Nutri Points",
+            name=entry.title,
             manufacturer="Nutri Points",
             model="Nutri Points Server",
             configuration_url=entry.data[CONF_BASE_URL],

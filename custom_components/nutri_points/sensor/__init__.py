@@ -3,10 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from custom_components.nutri_points.const import ATTR_LAST_ERROR, DOMAIN
+from custom_components.nutri_points.const import ATTR_LAST_ERROR
 from custom_components.nutri_points.coordinator import NutriPointsDataUpdateCoordinator
 from custom_components.nutri_points.data import NutriPointsConfigEntry
 from custom_components.nutri_points.entity import NutriPointsEntity
+from custom_components.nutri_points.utils import entity_unique_id
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.const import UnitOfMass, UnitOfVolume
 from homeassistant.core import HomeAssistant, callback
@@ -116,7 +117,7 @@ class NutriPointsSensor(SensorEntity, NutriPointsEntity):
     ) -> None:
         super().__init__(coordinator=coordinator, entry=entry)
         self.entity_description = description
-        self._attr_unique_id = f"{DOMAIN}_{description.key}"
+        self._attr_unique_id = entity_unique_id(entry, description.key)
 
     @property
     def native_value(self):
@@ -158,7 +159,7 @@ class NutriPointsWeightSensor(SensorEntity, NutriPointsEntity):
         entry: NutriPointsConfigEntry,
     ) -> None:
         super().__init__(coordinator=coordinator, entry=entry)
-        self._attr_unique_id = f"{DOMAIN}_weight"
+        self._attr_unique_id = entity_unique_id(entry, "weight")
         self._attr_translation_key = "current_weight"
         self._attr_icon = "mdi:scale-bathroom"
         self._attr_device_class = SensorDeviceClass.WEIGHT
@@ -214,7 +215,7 @@ class NutriPointsDrinkSensor(SensorEntity, NutriPointsEntity):
     ) -> None:
         super().__init__(coordinator=coordinator, entry=entry)
         self._drink_type_id = drink_type_id
-        self._attr_unique_id = f"{DOMAIN}_drink_{drink_type_id}"
+        self._attr_unique_id = entity_unique_id(entry, f"drink_{drink_type_id}")
         self._attr_translation_key = "drink"
         self._attr_native_unit_of_measurement = UnitOfVolume.MILLILITERS
         self._attr_icon = "mdi:cup-water"

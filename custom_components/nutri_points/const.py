@@ -33,7 +33,16 @@ STEPS_LOG_ENDPOINT = "/api/v1/logs/steps"
 
 # Keep Home Assistant compatible with adjacent stable server generations so it can
 # talk to production while development moves forward.
-SUPPORTED_API_CONTRACT_TAGS = ("stable-rw-v1", "stable-rw-v2", "stable-rw-v3", "stable-rw-v4")
+SUPPORTED_API_CONTRACT_TAGS = (
+    "stable-rw-v1",
+    "stable-rw-v2",
+    "stable-rw-v3",
+    "stable-rw-v4",
+    "stable-rw-v5",
+)
+IDENTITY_API_CONTRACT_TAG = "stable-rw-v5"
+
+IDENTITY_MISMATCH_ISSUE_SUFFIX = "server_identity_mismatch"
 
 AUTOMATION_EVENTS_CAPABILITY = "ha_automation_events_v1"
 AUTOMATION_EVENT_NAMES = (
@@ -62,6 +71,7 @@ RUNTIME_FAILURE_INVALID_AUTH = "invalid_auth"
 RUNTIME_FAILURE_INVALID_HOST = "invalid_host"
 RUNTIME_FAILURE_HTTP_API_KEY_FORBIDDEN = "http_api_key_forbidden"
 RUNTIME_FAILURE_INCOMPATIBLE_CONTRACT = "incompatible_contract"
+RUNTIME_FAILURE_IDENTITY_MISMATCH = "identity_mismatch"
 RUNTIME_FAILURE_TRANSIENT_TRANSPORT = "transient_transport"
 
 TRANSIENT_RUNTIME_ISSUE_THRESHOLD = 3
