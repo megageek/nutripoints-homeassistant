@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.0...v0.3.1) (2026-07-26)
+
+
+### Features
+
+* add food weighing sessions ([d426033](https://github.com/megageek/nutripoints-homeassistant/commit/d4260338b2c84bcfc38806545cf33150c6da404d)), closes [#4](https://github.com/megageek/nutripoints-homeassistant/issues/4)
+
 ## [0.3.0](https://github.com/megageek/nutripoints-homeassistant/compare/v0.2.0...v0.3.0) (2026-07-26)
 
 
