@@ -21,11 +21,19 @@ cd "$SCRIPT_DIR/.."
 # shellcheck source=script/.lib/output.sh
 source "$SCRIPT_DIR/.lib/output.sh"
 
-activate_venv
-
-PYTHON_BIN="$(command -v python)"
-if [[ -n ${VIRTUAL_ENV:-} && -x "$VIRTUAL_ENV/bin/python" ]]; then
-    PYTHON_BIN="$VIRTUAL_ENV/bin/python"
+if [[ -z ${VIRTUAL_ENV:-} ]]; then
+    log_header "Activating virtual environment"
+    # shellcheck source=/dev/null
+    if [[ -f "$HOME/ha-venv/bin/activate" ]]; then
+        source "$HOME/ha-venv/bin/activate"
+    elif [[ -f "$PWD/.local/ha-venv/bin/activate" ]]; then
+        source "$PWD/.local/ha-venv/bin/activate"
+    elif [[ -f "$HOME/.local/ha-venv/bin/activate" ]]; then
+        source "$HOME/.local/ha-venv/bin/activate"
+    else
+        log_error "Virtual environment not found. Run: script/setup/bootstrap"
+        exit 1
+    fi
 fi
 
 MINIMAL_MODE=false
@@ -57,11 +65,11 @@ if [[ -d custom_components ]]; then
     while IFS= read -r -d '' dir; do
         if [[ -d "$dir" && ! -L "${dir%/}" ]]; then
             PACKAGE_NAME=$(basename "$dir")
-            if uv pip show --python "$PYTHON_BIN" "$PACKAGE_NAME" >/dev/null 2>&1; then
+            if pip show "$PACKAGE_NAME" >/dev/null 2>&1; then
                 if [[ $MINIMAL_MODE == false ]]; then
                     log_step "Uninstalling accidentally installed package: $PACKAGE_NAME"
                 fi
-                uv pip uninstall --python "$PYTHON_BIN" "$PACKAGE_NAME" >/dev/null 2>&1 || true
+                pip uninstall -y "$PACKAGE_NAME" >/dev/null 2>&1 || true
             fi
         fi
     done < <(find custom_components -mindepth 1 -maxdepth 1 -type d -print0)
