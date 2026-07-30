@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.4](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.3...v0.3.4) (2026-07-30)
+
+
+### Features
+
+* **contract:** support stable-rw-v8 ([9d30db0](https://github.com/megageek/nutripoints-homeassistant/commit/9d30db05b40e26e50d4e82b30cc6cb7465933dab))
+* **contract:** support stable-rw-v8 ([ba63242](https://github.com/megageek/nutripoints-homeassistant/commit/ba632421e21f3754e9ff9af40776cd3a1b9288e3))
+
 ## [0.3.3](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.2...v0.3.3) (2026-07-26)
 
 
