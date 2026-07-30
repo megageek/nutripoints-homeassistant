@@ -30,7 +30,7 @@ When migrating from the component previously bundled in the Nutri Points server 
   the `nutri_points` domain.
 - Creates one Nutri Points device with translated entities and downloadable, credential-redacted diagnostics.
 
-The integration supports Nutri Points contract generations `stable-rw-v1` through `stable-rw-v7`. Unknown
+The integration supports Nutri Points contract generations `stable-rw-v1` through `stable-rw-v8`. Unknown
 generations are rejected during setup so incompatible data cannot silently reach automations. Food-weighing
 sessions require `stable-rw-v7` and the `ha_food_weighing_sessions_v1` capability; older servers continue to
 provide their existing entities and actions.
