@@ -72,7 +72,7 @@ async def test_client_rejects_unknown_contract_generation() -> None:
         "8f13a050-cc4c-1f89-aaf8-5badb51cbf5d",
     ],
 )
-@pytest.mark.parametrize("generation", ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7"])
+@pytest.mark.parametrize("generation", ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8"])
 async def test_identity_generations_reject_invalid_server_uuid(
     server_uuid: object,
     generation: str,
