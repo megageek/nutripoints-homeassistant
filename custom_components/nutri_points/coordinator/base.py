@@ -53,15 +53,18 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.day_status_available = False
         self.weight_available = False
         self.readiness_available = False
+        incompatible_contract_scopes: set[str] = set()
         self.poll_runtime_issues = NutriPointsRuntimeIssueTracker(
             hass=hass,
             entry_id=config_entry.entry_id,
             scope="poll",
+            incompatible_contract_scopes=incompatible_contract_scopes,
         )
         self.stream_runtime_issues = NutriPointsRuntimeIssueTracker(
             hass=hass,
             entry_id=config_entry.entry_id,
             scope="stream",
+            incompatible_contract_scopes=incompatible_contract_scopes,
         )
 
     def _utc_now_iso(self) -> str:

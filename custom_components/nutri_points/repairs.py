@@ -92,10 +92,18 @@ def classify_runtime_failure(exc: Exception) -> str:
 
 
 class NutriPointsRuntimeIssueTracker:
-    def __init__(self, *, hass: HomeAssistant, entry_id: str, scope: str) -> None:
+    def __init__(
+        self,
+        *,
+        hass: HomeAssistant,
+        entry_id: str,
+        scope: str,
+        incompatible_contract_scopes: set[str],
+    ) -> None:
         self._hass = hass
         self._entry_id = entry_id
         self._scope = scope
+        self._incompatible_contract_scopes = incompatible_contract_scopes
         self.failure_class: str | None = None
         self.failure_count = 0
         self.first_failure_at: str | None = None
@@ -104,8 +112,24 @@ class NutriPointsRuntimeIssueTracker:
     def _utc_now_iso(self) -> str:
         return datetime.now(UTC).isoformat()
 
+    def _incompatible_contract_issue_id(self) -> str:
+        return f"{self._entry_id}_runtime_{RUNTIME_FAILURE_INCOMPATIBLE_CONTRACT}"
+
     def _issue_id(self, failure_class: str) -> str:
+        if failure_class == RUNTIME_FAILURE_INCOMPATIBLE_CONTRACT:
+            return self._incompatible_contract_issue_id()
         return f"{self._entry_id}_{self._scope}_{failure_class}"
+
+    def _clear_active_issue(self) -> None:
+        if self.active_issue_id is None:
+            return
+        if self.active_issue_id == self._incompatible_contract_issue_id():
+            self._incompatible_contract_scopes.discard(self._scope)
+            if self._incompatible_contract_scopes:
+                self.active_issue_id = None
+                return
+        ir.async_delete_issue(self._hass, DOMAIN, self.active_issue_id)
+        self.active_issue_id = None
 
     def diagnostics(self) -> dict[str, object]:
         return {
@@ -132,19 +156,24 @@ class NutriPointsRuntimeIssueTracker:
             self._create_or_replace_issue(failure_class)
 
     def record_success(self) -> None:
+        self._clear_active_issue()
         self.failure_class = None
         self.failure_count = 0
         self.first_failure_at = None
-        if self.active_issue_id is not None:
-            ir.async_delete_issue(self._hass, DOMAIN, self.active_issue_id)
-            self.active_issue_id = None
 
     def _create_or_replace_issue(self, failure_class: str) -> None:
         issue_id = self._issue_id(failure_class)
         if self.active_issue_id == issue_id:
             return
-        if self.active_issue_id is not None:
-            ir.async_delete_issue(self._hass, DOMAIN, self.active_issue_id)
+        self._clear_active_issue()
+        if failure_class == RUNTIME_FAILURE_INCOMPATIBLE_CONTRACT:
+            self._incompatible_contract_scopes.add(self._scope)
+            for scope in ("poll", "stream"):
+                ir.async_delete_issue(
+                    self._hass,
+                    DOMAIN,
+                    f"{self._entry_id}_{scope}_{failure_class}",
+                )
         ir.async_create_issue(
             self._hass,
             DOMAIN,
