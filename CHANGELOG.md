@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.5](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.4...v0.3.5) (2026-08-02)
+
+
+### Features
+
+* support recipe print request events and stable-rw-v9 ([71e7dec](https://github.com/megageek/nutripoints-homeassistant/commit/71e7deccba099cf3465a83711abe76be2ae48a43))
+* **trigger:** support recipe print request events ([b6f97ea](https://github.com/megageek/nutripoints-homeassistant/commit/b6f97ea309eb9e1fb5b68eec77bba6229c452a52)), closes [#18](https://github.com/megageek/nutripoints-homeassistant/issues/18)
+
+
+### Bug Fixes
+
+* **repairs:** deduplicate contract mismatch issue ([53f5fac](https://github.com/megageek/nutripoints-homeassistant/commit/53f5facb2efcf9a166bdd24a951ac762f13d279a))
+
 ## [0.3.4](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.3...v0.3.4) (2026-07-30)
 
 
