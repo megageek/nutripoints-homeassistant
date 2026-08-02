@@ -57,3 +57,10 @@ recipe_batch_label_requested:
         select:
           translation_key: recipe_batch_action
           options: [any, recipe_batch_created, recipe_batch_reprinted]
+recipe_print_requested:
+  fields:
+    entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: nutri_points

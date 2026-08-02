@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from importlib.resources import files
+import json
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+import nutripoints_api_contract
 import pytest
 import voluptuous as vol
 
@@ -13,6 +16,7 @@ from custom_components.nutri_points.const import DOMAIN, automation_event_signal
 from custom_components.nutri_points.trigger import (
     FoodLoggedTrigger,
     FoodWeighingSessionStartedTrigger,
+    RecipePrintRequestedTrigger,
     WeighInSummaryTrigger,
 )
 from homeassistant.config_entries import ConfigEntryState
@@ -133,3 +137,38 @@ async def test_weigh_in_summary_trigger_exposes_total_weight_lost(hass) -> None:
     remove()
 
     assert runner.call_args.args[0]["summary"]["total_weight_lost_kg"] == 12.4
+
+
+async def test_recipe_print_trigger_preserves_destination_and_recipe(hass) -> None:
+    """Recipe print triggers expose the complete v9 payload without normalization."""
+    entry = SimpleNamespace(
+        domain=DOMAIN,
+        state=ConfigEntryState.LOADED,
+        runtime_data=SimpleNamespace(automation_events_supported=True),
+    )
+    hass.config_entries.async_get_entry = Mock(return_value=entry)
+    options = {"entry_id": "entry-1"}
+    validated = await RecipePrintRequestedTrigger.async_validate_config(hass, {CONF_OPTIONS: options})
+    trigger = RecipePrintRequestedTrigger(
+        hass,
+        TriggerConfig(key="recipe_print_requested", options=validated[CONF_OPTIONS]),
+    )
+    received = asyncio.Event()
+    runner = Mock(side_effect=lambda *_args: received.set())
+    remove = await trigger.async_attach_runner(runner)
+    fixture = files(nutripoints_api_contract).joinpath("data/generations/stable-rw-v9/home_assistant/sse-events.ndjson")
+    events = [json.loads(line) for line in fixture.read_text(encoding="utf-8").splitlines()]
+    payload = next(event["data"] for event in events if event["event"] == "recipe_print_requested")
+
+    async_dispatcher_send(
+        hass,
+        automation_event_signal("entry-1"),
+        "recipe_print_requested",
+        payload,
+    )
+    await asyncio.wait_for(received.wait(), timeout=1)
+    remove()
+
+    assert runner.call_args.args[0] is payload
+    assert payload["destination"] == {"name": "Kitchen Receipt", "key": "kitchen_receipt"}
+    assert runner.call_args.args[0]["recipe"] == payload["recipe"]

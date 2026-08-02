@@ -105,6 +105,11 @@ class RecipeBatchLabelTrigger(NutriPointsAutomationTrigger):
     allowed_actions = ("recipe_batch_created", "recipe_batch_reprinted")
 
 
+class RecipePrintRequestedTrigger(NutriPointsAutomationTrigger):
+    event_name = "recipe_print_requested"
+    allowed_actions = ()
+
+
 class FoodWeighingSessionStartedTrigger(NutriPointsAutomationTrigger):
     event_name = "food_weighing_session_started"
     allowed_actions = ()
@@ -116,6 +121,7 @@ TRIGGERS: dict[str, type[Trigger]] = {
     "food_weighing_session_started": FoodWeighingSessionStartedTrigger,
     "weigh_in_summary_generated": WeighInSummaryTrigger,
     "recipe_batch_label_requested": RecipeBatchLabelTrigger,
+    "recipe_print_requested": RecipePrintRequestedTrigger,
 }
 
 
