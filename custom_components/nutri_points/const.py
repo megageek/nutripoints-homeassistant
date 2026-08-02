@@ -43,8 +43,9 @@ SUPPORTED_API_CONTRACT_TAGS = (
     "stable-rw-v6",
     "stable-rw-v7",
     "stable-rw-v8",
+    "stable-rw-v9",
 )
-IDENTITY_API_CONTRACT_TAGS = ("stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8")
+IDENTITY_API_CONTRACT_TAGS = ("stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8", "stable-rw-v9")
 
 IDENTITY_MISMATCH_ISSUE_SUFFIX = "server_identity_mismatch"
 
@@ -55,6 +56,7 @@ AUTOMATION_EVENT_NAMES = (
     "meal_food_logged",
     "weigh_in_summary_generated",
     "recipe_batch_label_requested",
+    "recipe_print_requested",
 )
 
 

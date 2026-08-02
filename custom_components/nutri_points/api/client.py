@@ -236,14 +236,15 @@ class NutriPointsApiClient:
                 "Connected server did not return Nutri Points runtime metadata from /api/v1/system/runtime."
             )
         contract_version = str(runtime.get("api_contract_version") or "")
-        if not any(tag in contract_version for tag in SUPPORTED_API_CONTRACT_TAGS):
+        contract_tag = contract_version.rpartition(".")[2]
+        if contract_tag not in SUPPORTED_API_CONTRACT_TAGS:
             expected = ", ".join(SUPPORTED_API_CONTRACT_TAGS)
             raise NutriPointsContractError(
                 "Nutri Points API contract is incompatible. "
                 f"Expected one of [{expected}] in api_contract_version, got '{contract_version}'."
             )
         server_uuid = _canonical_uuid4(runtime.get("server_uuid"))
-        if any(tag in contract_version for tag in IDENTITY_API_CONTRACT_TAGS) and server_uuid is None:
+        if contract_tag in IDENTITY_API_CONTRACT_TAGS and server_uuid is None:
             raise NutriPointsContractError(
                 "Nutri Points stable-rw-v5 and newer runtime metadata must include a canonical UUIDv4 server_uuid."
             )

@@ -170,6 +170,16 @@
         }
       }
     },
+    "recipe_print_requested": {
+      "name": "Recipe print requested",
+      "description": "Triggers when a recipe print is requested in Nutri Points.",
+      "fields": {
+        "entry_id": {
+          "name": "Nutri Points server",
+          "description": "The Nutri Points server whose recipe print requests should trigger the automation."
+        }
+      }
+    },
     "weigh_in_summary_generated": {
       "name": "Weigh-in summary generated",
       "description": "Triggers when Nutri Points generates a weigh-in summary.",

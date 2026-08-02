@@ -8,6 +8,7 @@ from nutripoints_api_contract import available_generations, load_json
 import pytest
 
 from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsContractError, NutriPointsSessionError
+from custom_components.nutri_points.const import AUTOMATION_EVENT_NAMES, SUPPORTED_API_CONTRACT_TAGS
 
 
 class FakeResponse:
@@ -63,6 +64,15 @@ async def test_client_rejects_unknown_contract_generation() -> None:
         await client.async_validate_runtime()
 
 
+def test_stable_rw_v9_profile_exposes_recipe_print_events() -> None:
+    """The v9 compatibility profile and integration advertise recipe print requests."""
+    profile = load_json("stable-rw-v9", "home_assistant/profile.json")
+
+    assert "stable-rw-v9" in SUPPORTED_API_CONTRACT_TAGS
+    assert "recipe_print_requested" in profile["sse_events"]
+    assert "recipe_print_requested" in AUTOMATION_EVENT_NAMES
+
+
 @pytest.mark.parametrize(
     "server_uuid",
     [
@@ -72,7 +82,10 @@ async def test_client_rejects_unknown_contract_generation() -> None:
         "8f13a050-cc4c-1f89-aaf8-5badb51cbf5d",
     ],
 )
-@pytest.mark.parametrize("generation", ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8"])
+@pytest.mark.parametrize(
+    "generation",
+    ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8", "stable-rw-v9"],
+)
 async def test_identity_generations_reject_invalid_server_uuid(
     server_uuid: object,
     generation: str,
