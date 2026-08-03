@@ -1,9 +1,6 @@
 {
   "name": "HA ${localWorkspaceFolderBasename} Dev Container",
   "image": "mcr.microsoft.com/devcontainers/base:debian",
-  // Bubblewrap-based agent sandboxes require unprivileged user namespaces.
-  // Docker default seccomp blocks unshare(CLONE_NEWUSER), even when the host kernel allows it.
-  "runArgs": ["--security-opt=seccomp=unconfined"],
   // Lifecycle hooks — execution order on first creation:
   //   onCreateCommand → updateContentCommand → postCreateCommand → postStartCommand → postAttachCommand
   // On subsequent starts (container stopped/restarted):
@@ -22,6 +19,7 @@
   // Runs on every container creation — installs all dependencies.
   "postCreateCommand": "bash .devcontainer/post-create.sh",
   // Runs on every client attach — detects fresh blueprints and triggers initialization.
+  "postAttachCommand": "bash .devcontainer/post-attach.sh",
   "containerEnv": {
     // Python runtime variables — must be set for ALL Python processes, including those spawned
     // by VS Code extensions (Pylance, test runner, Ruff) that never go through our shell scripts.
@@ -41,12 +39,6 @@
     // Point uv to the named volume cache mount (avoids Docker creating ~/.cache as root).
     // Must be set here so it reaches every process (extensions, uv, hass) from container start.
     "UV_CACHE_DIR": "/home/vscode/uv-cache"
-  },
-  "remoteEnv": {
-    // The Python feature prepends its system interpreter after the container starts.
-    // Re-prioritize the project venv for VS Code, terminals, tasks, and agent processes.
-    "PATH": "/home/vscode/ha-venv/bin:${containerEnv:PATH}",
-    "VIRTUAL_ENV": "/home/vscode/ha-venv"
   },
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
