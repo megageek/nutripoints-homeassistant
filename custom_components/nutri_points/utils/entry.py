@@ -17,7 +17,6 @@ LEGACY_DEFAULT_OBJECT_SUFFIXES = {
     "activity_points": "activity_points",
     "budget_points": "budget_points",
     "food_points": "food_points",
-    "has_planned_food": "has_planned_food",
     "over_budget": "over_budget",
     "points_low": "points_low",
     "remaining_points": "remaining_points",
@@ -45,10 +44,17 @@ def async_migrate_entity_registry(
     *,
     rename_default_entity_ids: bool,
 ) -> None:
-    """Scope legacy unique IDs to the server and optionally rename default IDs."""
+    """Remove obsolete entities and scope legacy unique IDs to the server."""
+    registry = er.async_get(hass)
+    obsolete_unique_ids = {f"{LEGACY_ENTITY_UNIQUE_ID_PREFIX}has_planned_food"}
+    if entry.unique_id is not None:
+        obsolete_unique_ids.add(f"{entry.unique_id}_has_planned_food")
+    for registry_entry in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if registry_entry.unique_id in obsolete_unique_ids:
+            registry.async_remove(registry_entry.entity_id)
+
     if entry.unique_id is None:
         return
-    registry = er.async_get(hass)
     server_name = str(entry.data.get(CONF_NAME) or default_server_name(str(entry.data.get(CONF_BASE_URL, ""))))
     server_slug = slugify(server_name)
 

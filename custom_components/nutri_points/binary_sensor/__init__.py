@@ -46,11 +46,6 @@ def _is_over_budget(data: dict[str, Any], _low_threshold: int) -> bool:
     return remaining is not None and remaining < 0
 
 
-def _has_planned_food(data: dict[str, Any], _low_threshold: int) -> bool:
-    planned = _to_number(data.get("planned_points"))
-    return planned is not None and planned > 0
-
-
 def _weigh_in_payload(data: dict[str, Any]) -> dict[str, Any]:
     readiness_value = data.get("readiness")
     readiness: dict[str, Any] = readiness_value if isinstance(readiness_value, dict) else {}
@@ -72,12 +67,6 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[NutriBinarySensorDescription, ...] = (
         icon="mdi:alert-circle",
         device_class=BinarySensorDeviceClass.PROBLEM,
         evaluator=_is_over_budget,
-    ),
-    NutriBinarySensorDescription(
-        key="has_planned_food",
-        translation_key="has_planned_food",
-        icon="mdi:calendar-check",
-        evaluator=_has_planned_food,
     ),
 )
 
@@ -139,13 +128,9 @@ class NutriPointsBinarySensor(BinarySensorEntity, NutriPointsEntity):
             "date": data.get("date"),
             "timezone": data.get("timezone"),
             "remaining_points": data.get("remaining_points"),
-            "planned_points": data.get("planned_points"),
             "food_points": data.get("food_points"),
             "activity_points": data.get("activity_points"),
             "low_points_threshold": self._low_points_threshold,
-            "detail_message": data.get("detail_message"),
-            "detail_error_code": data.get("detail_error_code"),
-            "detail_retryable": data.get("detail_retryable"),
         }
         if self.coordinator.last_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_error

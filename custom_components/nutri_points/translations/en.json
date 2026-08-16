@@ -226,9 +226,6 @@
       "over_budget": {
         "name": "Over budget"
       },
-      "has_planned_food": {
-        "name": "Has planned food"
-      },
       "weigh_in_due": {
         "name": "Weigh-in due"
       }
