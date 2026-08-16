@@ -136,11 +136,6 @@ class NutriPointsSensor(SensorEntity, NutriPointsEntity):
             "food_points": data.get("food_points"),
             "step_points": data.get("step_points"),
             "exercise_points": data.get("exercise_points"),
-            "planned_points": data.get("planned_points"),
-            "projected_remaining_points": data.get("projected_remaining_points"),
-            "detail_message": data.get("detail_message"),
-            "detail_error_code": data.get("detail_error_code"),
-            "detail_retryable": data.get("detail_retryable"),
         }
         if self.coordinator.last_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_error
@@ -192,9 +187,6 @@ class NutriPointsWeightSensor(SensorEntity, NutriPointsEntity):
             "status": weight.get("status"),
             "previous_weight_kg": weight.get("previous_weight_kg"),
             "change_from_previous_kg": weight.get("change_from_previous_kg"),
-            "detail_message": data.get("detail_message"),
-            "detail_error_code": data.get("detail_error_code"),
-            "detail_retryable": data.get("detail_retryable"),
         }
         if self.coordinator.last_weight_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_weight_error
@@ -255,9 +247,6 @@ class NutriPointsDrinkSensor(SensorEntity, NutriPointsEntity):
             "drink_type_name": row.get("drink_type_name"),
             "display_order": row.get("display_order"),
             "is_hidden_on_day": row.get("is_hidden_on_day"),
-            "detail_message": data.get("detail_message"),
-            "detail_error_code": data.get("detail_error_code"),
-            "detail_retryable": data.get("detail_retryable"),
         }
         if self.coordinator.last_error:
             attrs[ATTR_LAST_ERROR] = self.coordinator.last_error

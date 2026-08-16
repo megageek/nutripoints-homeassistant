@@ -7,7 +7,12 @@ from typing import Any, Self
 from nutripoints_api_contract import available_generations, load_json
 import pytest
 
-from custom_components.nutri_points.api import NutriPointsApiClient, NutriPointsContractError, NutriPointsSessionError
+from custom_components.nutri_points.api import (
+    NutriPointsApiClient,
+    NutriPointsAuthError,
+    NutriPointsContractError,
+    NutriPointsSessionError,
+)
 from custom_components.nutri_points.const import AUTOMATION_EVENT_NAMES, SUPPORTED_API_CONTRACT_TAGS
 
 
@@ -73,6 +78,15 @@ def test_stable_rw_v9_profile_exposes_recipe_print_events() -> None:
     assert "recipe_print_requested" in AUTOMATION_EVENT_NAMES
 
 
+def test_stable_rw_v10_preserves_home_assistant_payload_contract() -> None:
+    """V10 retains the Home Assistant profile while tenancy stays server-side."""
+    v9_profile = load_json("stable-rw-v9", "home_assistant/profile.json")
+    v10_profile = load_json("stable-rw-v10", "home_assistant/profile.json")
+
+    assert "stable-rw-v10" in SUPPORTED_API_CONTRACT_TAGS
+    assert v10_profile == v9_profile
+
+
 @pytest.mark.parametrize(
     "server_uuid",
     [
@@ -84,7 +98,7 @@ def test_stable_rw_v9_profile_exposes_recipe_print_events() -> None:
 )
 @pytest.mark.parametrize(
     "generation",
-    ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8", "stable-rw-v9"],
+    ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8", "stable-rw-v9", "stable-rw-v10"],
 )
 async def test_identity_generations_reject_invalid_server_uuid(
     server_uuid: object,
@@ -120,6 +134,16 @@ async def test_setup_blocked_normalizes_across_generations(generation: str) -> N
 
     assert result["status"] == "setup_blocked"
     assert result["detail_error_code"] == "budget_not_ready"
+
+
+@pytest.mark.parametrize("message", ["API key expired.", "API key revoked.", "User is disabled."])
+async def test_v10_invalid_user_owned_credentials_are_auth_errors(message: str) -> None:
+    """Invalid v10 user-owned credentials consistently request reauthentication."""
+    session = FakeSession(FakeResponse({"detail": message}, status=401))
+    client = NutriPointsApiClient(session=session, base_url="http://nutri.local", api_key="npk_test")
+
+    with pytest.raises(NutriPointsAuthError, match="provided API key"):
+        await client.async_get_today_status()
 
 
 async def test_write_uses_bearer_and_retry_identifiers() -> None:
