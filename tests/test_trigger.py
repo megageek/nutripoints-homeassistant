@@ -140,7 +140,7 @@ async def test_weigh_in_summary_trigger_exposes_total_weight_lost(hass) -> None:
 
 
 async def test_recipe_print_trigger_preserves_destination_and_recipe(hass) -> None:
-    """Recipe print triggers expose the complete v9 payload without normalization."""
+    """Recipe print triggers expose the complete v10 payload without normalization."""
     entry = SimpleNamespace(
         domain=DOMAIN,
         state=ConfigEntryState.LOADED,
@@ -156,7 +156,9 @@ async def test_recipe_print_trigger_preserves_destination_and_recipe(hass) -> No
     received = asyncio.Event()
     runner = Mock(side_effect=lambda *_args: received.set())
     remove = await trigger.async_attach_runner(runner)
-    fixture = files(nutripoints_api_contract).joinpath("data/generations/stable-rw-v9/home_assistant/sse-events.ndjson")
+    fixture = files(nutripoints_api_contract).joinpath(
+        "data/generations/stable-rw-v10/home_assistant/sse-events.ndjson"
+    )
     events = [json.loads(line) for line in fixture.read_text(encoding="utf-8").splitlines()]
     payload = next(event["data"] for event in events if event["event"] == "recipe_print_requested")
 
