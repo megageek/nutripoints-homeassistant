@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.5...v0.4.0) (2026-08-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **entity:** The Has planned food binary sensor and the planned_points, projected_remaining_points, detail_message, detail_error_code, and detail_retryable state attributes are removed.
+
+### Features
+
+* **api:** support stable-rw-v10 contract ([897b0f5](https://github.com/megageek/nutripoints-homeassistant/commit/897b0f5fd0e67eaac36b87050126b8a4866a70de)), closes [#23](https://github.com/megageek/nutripoints-homeassistant/issues/23)
+
+
+### Bug Fixes
+
+* **entity:** remove obsolete planning interface ([95165ca](https://github.com/megageek/nutripoints-homeassistant/commit/95165ca51d328242f912fb9e1f200b3e00f1595b))
+
 ## [0.3.5](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.4...v0.3.5) (2026-08-02)
 
 
