@@ -2,9 +2,8 @@
 
 # script/test: Run project tests
 #
-# Runs pytest with project configuration. Automatically cleans up package
-# installations after test run to prevent Home Assistant from loading the
-# wrong version.
+# Runs integration tests plus synchronized tooling tests with the project
+# configuration. Automatically cleans up package installations after the run.
 #
 # Usage:
 #   ./script/test [OPTIONS] [PYTEST_OPTIONS]
@@ -33,19 +32,6 @@ source "$SCRIPT_DIR/.lib/integration.sh"
 
 activate_venv
 
-PYTHON_BIN="$(command -v python)"
-if [[ -n ${VIRTUAL_ENV:-} && -x "$VIRTUAL_ENV/bin/python" ]]; then
-    PYTHON_BIN="$VIRTUAL_ENV/bin/python"
-fi
-
-cleanup() {
-    local exit_status=$?
-    trap - EXIT
-    "$SCRIPT_DIR/clean" --minimal || true
-    exit "$exit_status"
-}
-trap cleanup EXIT
-
 # Parse coverage flags
 COVERAGE_ARGS=()
 PYTEST_ARGS=()
@@ -68,9 +54,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Check if pytest is available
-if ! "$PYTHON_BIN" -c "import pytest" 2>/dev/null; then
+if ! python -c "import pytest" 2>/dev/null; then
     log_info "pytest not found. Installing test dependencies..."
-    uv pip install --python "$PYTHON_BIN" --requirement requirements_test.txt
+    uv pip install -e ".[test]"
 fi
 
 # Run pytest with project configuration
@@ -83,7 +69,11 @@ echo ""
 
 run_hook "test" "pre"
 echo ""
-"$PYTHON_BIN" -m pytest "${COVERAGE_ARGS[@]}" "${PYTEST_ARGS[@]}"
+TEST_PATHS="tests"
+if [[ -d script/tests ]]; then
+    TEST_PATHS+=" script/tests"
+fi
+pytest --override-ini "testpaths=$TEST_PATHS" "${COVERAGE_ARGS[@]}" "${PYTEST_ARGS[@]}"
 
 run_hook "test" "post"
 
@@ -93,3 +83,8 @@ if [[ ${#COVERAGE_ARGS[@]} -gt 0 ]] && [[ " ${COVERAGE_ARGS[*]} " =~ " --cov-rep
     echo ""
     log_success "Coverage report generated in htmlcov/index.html"
 fi
+
+# Clean up any accidental package installation from pytest/test dependencies
+# This prevents Home Assistant from loading the installed version instead of
+# the development version from custom_components/
+"$SCRIPT_DIR/clean" --minimal
