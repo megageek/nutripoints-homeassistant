@@ -16,7 +16,7 @@ jobs:
   check-ha-stability:
     name: Skip if HA dependency is pre-release
     # Only run for Dependabot PRs — human PRs are never auto-closed
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
