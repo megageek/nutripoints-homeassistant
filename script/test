@@ -32,6 +32,14 @@ source "$SCRIPT_DIR/.lib/integration.sh"
 
 activate_venv
 
+cleanup() {
+    local exit_status=$?
+    trap - EXIT
+    "$SCRIPT_DIR/clean" --minimal || true
+    exit "$exit_status"
+}
+trap cleanup EXIT
+
 # Parse coverage flags
 COVERAGE_ARGS=()
 PYTEST_ARGS=()
@@ -83,8 +91,3 @@ if [[ ${#COVERAGE_ARGS[@]} -gt 0 ]] && [[ " ${COVERAGE_ARGS[*]} " =~ " --cov-rep
     echo ""
     log_success "Coverage report generated in htmlcov/index.html"
 fi
-
-# Clean up any accidental package installation from pytest/test dependencies
-# This prevents Home Assistant from loading the installed version instead of
-# the development version from custom_components/
-"$SCRIPT_DIR/clean" --minimal

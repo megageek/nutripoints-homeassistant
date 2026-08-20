@@ -97,7 +97,7 @@ async def test_coordinator_auth_failure_requests_reauthentication(hass: HomeAssi
         config_entry=entry,
     )
 
-    with patch.object(entry, "async_start_reauth") as start_reauth:
+    with patch.object(entry, "async_start_reauth_if_available") as start_reauth:
         await coordinator.async_refresh()
 
     start_reauth.assert_called_once_with(hass)
