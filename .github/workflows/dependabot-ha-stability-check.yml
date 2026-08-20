@@ -12,6 +12,10 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: dependabot-ha-stability-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   check-ha-stability:
     name: Skip if HA dependency is pre-release
@@ -19,13 +23,14 @@ jobs:
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
-      contents: read
+      pull-requests: write # Close unsupported pre-release update pull requests.
+      contents: read # Read the test dependency pin from the pull request checkout.
     steps:
       - name: Checkout PR branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
 
       - name: Check if HA dependency is a pre-release
         id: check
