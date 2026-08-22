@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/megageek/nutripoints-homeassistant/compare/v0.4.0...v0.5.0) (2026-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* **deps:** Nutri Points now requires Home Assistant 2026.8 or newer.
+
+### Bug Fixes
+
+* **deps:** require Home Assistant 2026.8 ([97178ed](https://github.com/megageek/nutripoints-homeassistant/commit/97178ed8ecdf8574c12ed4d00ee0d59ea125380b))
+* **deps:** support stable-rw-v11 contract ([4acf465](https://github.com/megageek/nutripoints-homeassistant/commit/4acf4659cb580fd425055241daf85245c93acd7c)), closes [#25](https://github.com/megageek/nutripoints-homeassistant/issues/25)
+
 ## [0.4.0](https://github.com/megageek/nutripoints-homeassistant/compare/v0.3.5...v0.4.0) (2026-08-16)
 
 
