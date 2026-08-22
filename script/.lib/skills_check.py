@@ -317,16 +317,16 @@ def _required_catalogue_files() -> tuple[Path, ...]:
 
 
 def _is_initialized_integration() -> bool:
-    """Return whether AGENTS.md identifies this repository as an initialized integration."""
+    """Return whether this repository is an initialized integration."""
     if not ROLE_FILE.is_file():
-        return False
+        return not Path("initialize.sh").is_file()
 
     text = ROLE_FILE.read_text()
     try:
         role = text.split(ROLE_MARKER_START, 1)[1].split(ROLE_MARKER_END, 1)[0]
     except IndexError:
-        return False
-    return "initialized" in role.lower()
+        return not Path("initialize.sh").is_file()
+    return "initialized" in role.lower() or not Path("initialize.sh").is_file()
 
 
 def check_pointer_links() -> list[Report]:
