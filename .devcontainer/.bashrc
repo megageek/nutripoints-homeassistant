@@ -1,13 +1,25 @@
 # shellcheck shell=bash disable=SC2139
+# Resolve the active workspace. WORKSPACE_ROOT is set by devcontainer.json; the
+# fallbacks keep this usable in Codespaces and older containers until rebuilt.
+if [[ -z "${WORKSPACE_ROOT:-}" || ! -d "$WORKSPACE_ROOT" ]]; then
+    WORKSPACE_ROOT=""
+    if [[ "$PWD" == /workspaces/* || "$PWD" == /workspace* ]]; then
+        WORKSPACE_ROOT="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || true)"
+    fi
+    if [[ -z "$WORKSPACE_ROOT" ]]; then
+        for dir in /workspaces/* /workspace; do
+            if [[ -d "$dir" ]]; then
+                WORKSPACE_ROOT="$dir"
+                break
+            fi
+        done
+    fi
+fi
+
 # Show MOTD once per container lifecycle (new container or rebuild).
 WORKSPACE_DIR=""
 if [[ -n "${VSCODE_GIT_IPC_HANDLE:-}" || -n "${CODESPACES:-}" ]]; then
-    for dir in /workspaces/* /workspace; do
-        if [[ -d "$dir" ]]; then
-            WORKSPACE_DIR="$dir"
-            break
-        fi
-    done
+    WORKSPACE_DIR="$WORKSPACE_ROOT"
 fi
 
 if [[ -n "$WORKSPACE_DIR" && -f "$WORKSPACE_DIR/.devcontainer/motd" ]]; then
@@ -20,15 +32,6 @@ if [[ -n "$WORKSPACE_DIR" && -f "$WORKSPACE_DIR/.devcontainer/motd" ]]; then
         touch "$MOTD_MARKER_FILE"
     fi
 fi
-
-# Find workspace directory for aliases
-WORKSPACE_ROOT=""
-for dir in /workspaces/* /workspace; do
-    if [ -d "$dir" ]; then
-        WORKSPACE_ROOT="$dir"
-        break
-    fi
-done
 
 # Home Assistant development aliases (work from anywhere!)
 if [ -n "$WORKSPACE_ROOT" ]; then
@@ -57,6 +60,6 @@ if [ -n "$WORKSPACE_ROOT" ]; then
 fi
 
 # Change to workspace directory if we're in /home/vscode
-if [ "$PWD" = "$HOME" ] && [ -d "/workspaces" ]; then
-    cd /workspaces/* 2>/dev/null || true
+if [ "$PWD" = "$HOME" ] && [ -n "$WORKSPACE_ROOT" ]; then
+    cd "$WORKSPACE_ROOT" 2>/dev/null || true
 fi

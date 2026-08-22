@@ -1,6 +1,11 @@
 {
   "name": "HA ${localWorkspaceFolderBasename} Dev Container",
   "image": "mcr.microsoft.com/devcontainers/base:debian",
+  // Derived from Moby profiles seccomp/v0.2.1. Permit bubblewrap to create
+  // Codex's nested sandbox while retaining restrictions for unrelated syscalls.
+  "runArgs": [
+    "--security-opt=seccomp=${localWorkspaceFolder}/.devcontainer/seccomp-bubblewrap.json"
+  ],
   // Lifecycle hooks — execution order on first creation:
   //   onCreateCommand → updateContentCommand → postCreateCommand → postStartCommand → postAttachCommand
   // On subsequent starts (container stopped/restarted):
@@ -38,7 +43,9 @@
     "PYTHONDONTWRITEBYTECODE": "1",
     // Point uv to the named volume cache mount (avoids Docker creating ~/.cache as root).
     // Must be set here so it reaches every process (extensions, uv, hass) from container start.
-    "UV_CACHE_DIR": "/home/vscode/uv-cache"
+    "UV_CACHE_DIR": "/home/vscode/uv-cache",
+    // Avoid guessing from /workspaces/* when more than one repository is mounted.
+    "WORKSPACE_ROOT": "${containerWorkspaceFolder}"
   },
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
