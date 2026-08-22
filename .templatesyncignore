@@ -38,6 +38,10 @@ pyproject.toml
 # and requirements_test.txt are blueprint-managed tooling and do get synced.
 requirements.txt
 
+# This skill is only meaningful in the upstream blueprint. Initialized repositories
+# remove it so it cannot refer to template-only documentation.
+.agents/skills/blueprint-skill-maintenance/
+
 # ── VS Code workspace settings ───────────────────────────────
 # launch.json and tasks.json reference your integration domain
 # in debugger arguments and task commands.

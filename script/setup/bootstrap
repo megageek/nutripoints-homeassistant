@@ -102,7 +102,7 @@ if [[ "$VENV_IS_EXTERNAL" == "true" ]]; then
     if [[ -d .local/ha-venv && ! -L .local/ha-venv ]]; then
         log_warning "Skipping .local/ha-venv: directory already exists (not a symlink)"
     else
-        ln -sf "$VENV_PATH" .local/ha-venv
+        ln -sfn "$VENV_PATH" .local/ha-venv
     fi
 fi
 
@@ -114,14 +114,14 @@ mkdir -p .local
 if [[ -d .venv && ! -L .venv ]]; then
     log_warning "Skipping .venv: directory already exists (not a symlink)"
 else
-    ln -sf .local/ha-venv .venv
+    ln -sfn .local/ha-venv .venv
 fi
 
 # .local/venv → ha-venv (GitHub Copilot Agent expectation)
 if [[ -d .local/venv && ! -L .local/venv ]]; then
     log_warning "Skipping .local/venv: directory already exists (not a symlink)"
 else
-    ln -sf ha-venv .local/venv
+    ln -sfn ha-venv .local/venv
 fi
 
 # shellcheck source=/dev/null

@@ -1,5 +1,32 @@
 # AI Agent Instructions
 
+<!-- repo-role:start -->
+
+This repository is an initialized Home Assistant custom integration, not the blueprint template. Apply the integration guidance below; blueprint-only maintenance guidance does not apply.
+
+<!-- repo-role:end -->
+
+## Skill routing
+
+| Task                                                          | Skill                                                                  |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Add or change an entity                                       | [`ha-entity-platform`](.agents/skills/ha-entity-platform/SKILL.md)     |
+| Add or change a service action                                | [`ha-service-action`](.agents/skills/ha-service-action/SKILL.md)       |
+| Work on setup, options, reauth, reconfigure, or discovery     | [`ha-config-flow`](.agents/skills/ha-config-flow/SKILL.md)             |
+| Diagnose setup or coordinator runtime failures                | [`ha-coordinator-debug`](.agents/skills/ha-coordinator-debug/SKILL.md) |
+| Add or fix translations                                       | [`ha-translations`](.agents/skills/ha-translations/SKILL.md)           |
+| Write or fix automated tests                                  | [`ha-testing`](.agents/skills/ha-testing/SKILL.md)                     |
+| Review integration quality                                    | [`ha-quality-review`](.agents/skills/ha-quality-review/SKILL.md)       |
+| Verify or replace deprecated Home Assistant APIs              | [`ha-modern-apis`](.agents/skills/ha-modern-apis/SKILL.md)             |
+| Make a potentially breaking integration change                | [`ha-breaking-changes`](.agents/skills/ha-breaking-changes/SKILL.md)   |
+| Settle requirements before implementation                     | [`ha-grill`](.agents/skills/ha-grill/SKILL.md)                         |
+| Plan a large change or architectural decision                 | [`ha-planning`](.agents/skills/ha-planning/SKILL.md)                   |
+| Prepare a release, release notes, or commit message           | [`ha-release`](.agents/skills/ha-release/SKILL.md)                     |
+| Triage the issue backlog                                      | [`ha-issue-triage`](.agents/skills/ha-issue-triage/SKILL.md)           |
+| Use validation scripts, hooks, dependencies, or template sync | [`blueprint-tooling`](.agents/skills/blueprint-tooling/SKILL.md)       |
+| Adopt the blueprint in an existing integration                | [`blueprint-import`](.agents/skills/blueprint-import/SKILL.md)         |
+| Turn a fresh blueprint into a real integration                | [`blueprint-scaffold`](.agents/skills/blueprint-scaffold/SKILL.md)     |
+
 This document provides guidance for AI coding agents working on this Home Assistant custom integration project.
 
 ## Project Overview
