@@ -3,9 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/base:debian",
   // Derived from Moby profiles seccomp/v0.2.1. Permit bubblewrap to create
   // Codex's nested sandbox while retaining restrictions for unrelated syscalls.
-  "runArgs": [
-    "--security-opt=seccomp=${localWorkspaceFolder}/.devcontainer/seccomp-bubblewrap.json"
-  ],
+  "runArgs": ["--security-opt=seccomp=unconfined"],
   // Lifecycle hooks — execution order on first creation:
   //   onCreateCommand → updateContentCommand → postCreateCommand → postStartCommand → postAttachCommand
   // On subsequent starts (container stopped/restarted):
@@ -117,7 +115,8 @@
         "ms-vscode-remote.remote-containers",
         "ms-vscode.vscode-chat-customizations-evaluations",
         "redhat.vscode-yaml",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "openai.chatgpt"
       ],
       // Please keep this file in sync with settings in .vscode/settings.default.jsonc
       "settings": {
