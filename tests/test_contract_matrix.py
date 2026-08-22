@@ -78,13 +78,13 @@ def test_stable_rw_v9_profile_exposes_recipe_print_events() -> None:
     assert "recipe_print_requested" in AUTOMATION_EVENT_NAMES
 
 
-def test_stable_rw_v10_preserves_home_assistant_payload_contract() -> None:
-    """V10 retains the Home Assistant profile while tenancy stays server-side."""
-    v9_profile = load_json("stable-rw-v9", "home_assistant/profile.json")
+def test_stable_rw_v11_preserves_home_assistant_payload_contract() -> None:
+    """V11 adds food-log provenance without changing Home Assistant payloads."""
     v10_profile = load_json("stable-rw-v10", "home_assistant/profile.json")
+    v11_profile = load_json("stable-rw-v11", "home_assistant/profile.json")
 
-    assert "stable-rw-v10" in SUPPORTED_API_CONTRACT_TAGS
-    assert v10_profile == v9_profile
+    assert "stable-rw-v11" in SUPPORTED_API_CONTRACT_TAGS
+    assert v11_profile == v10_profile
 
 
 @pytest.mark.parametrize(
@@ -98,7 +98,15 @@ def test_stable_rw_v10_preserves_home_assistant_payload_contract() -> None:
 )
 @pytest.mark.parametrize(
     "generation",
-    ["stable-rw-v5", "stable-rw-v6", "stable-rw-v7", "stable-rw-v8", "stable-rw-v9", "stable-rw-v10"],
+    [
+        "stable-rw-v5",
+        "stable-rw-v6",
+        "stable-rw-v7",
+        "stable-rw-v8",
+        "stable-rw-v9",
+        "stable-rw-v10",
+        "stable-rw-v11",
+    ],
 )
 async def test_identity_generations_reject_invalid_server_uuid(
     server_uuid: object,

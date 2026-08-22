@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, Mock, patch
 
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -55,6 +56,7 @@ async def _async_setup_entry(
     name: str = "Home",
     base_url: str = "http://nutri.local:8000",
     server_uuid: str | None = None,
+    today_data: dict[str, Any] | None = None,
 ) -> MockConfigEntry:
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -81,7 +83,11 @@ async def _async_setup_entry(
                 }
             ),
         ),
-        patch.object(NutriPointsApiClient, "async_get_today_status", new=AsyncMock(return_value=TODAY_DATA)),
+        patch.object(
+            NutriPointsApiClient,
+            "async_get_today_status",
+            new=AsyncMock(return_value=today_data or TODAY_DATA),
+        ),
         patch.object(NutriPointsApiClient, "async_get_weight_overview", new=AsyncMock(return_value={})),
         patch.object(NutriPointsApiClient, "async_get_today_readiness", new=AsyncMock(return_value={})),
         patch.object(NutriPointsEventStreamListener, "start"),
@@ -109,6 +115,29 @@ async def test_entities_keep_unique_ids_and_attach_to_device(hass: HomeAssistant
     assert device.manufacturer == "Nutri Points"
     assert device.model == "Nutri Points Server"
     assert device.sw_version == "1.2.3"
+
+
+async def test_entities_ignore_v11_food_log_estimate_provenance(hass: HomeAssistant) -> None:
+    """Optional v11 food-log estimate fields do not alter exposed entity state."""
+    today_data = {
+        **TODAY_DATA,
+        "food_logs": [
+            {
+                "id": 42,
+                "nutrition_source": "llm_estimate",
+                "estimate_confidence": "low",
+                "estimate_calories_low_kcal": 1250,
+                "estimate_calories_high_kcal": 1850,
+                "estimate_original_description": "Chicken curry, rice, and naan",
+            }
+        ],
+    }
+    await _async_setup_entry(hass, today_data=today_data)
+
+    state = hass.states.get("sensor.home_remaining_points")
+    assert state is not None
+    assert state.state == "8"
+    assert "food_logs" not in state.attributes
 
 
 async def test_diagnostics_redact_credentials(hass: HomeAssistant) -> None:

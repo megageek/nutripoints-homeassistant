@@ -45,6 +45,7 @@ SUPPORTED_API_CONTRACT_TAGS = (
     "stable-rw-v8",
     "stable-rw-v9",
     "stable-rw-v10",
+    "stable-rw-v11",
 )
 IDENTITY_API_CONTRACT_TAGS = (
     "stable-rw-v5",
@@ -53,6 +54,7 @@ IDENTITY_API_CONTRACT_TAGS = (
     "stable-rw-v8",
     "stable-rw-v9",
     "stable-rw-v10",
+    "stable-rw-v11",
 )
 
 IDENTITY_MISMATCH_ISSUE_SUFFIX = "server_identity_mismatch"

@@ -52,6 +52,42 @@ async def test_food_trigger_filters_and_exposes_event_payload(hass) -> None:
     assert runner.call_args.args[0]["event_id"] == 42
 
 
+async def test_food_trigger_ignores_v11_food_log_estimate_provenance(hass) -> None:
+    """Optional v11 estimate metadata does not affect food-log trigger matching."""
+    entry = SimpleNamespace(
+        domain=DOMAIN,
+        state=ConfigEntryState.LOADED,
+        runtime_data=SimpleNamespace(automation_events_supported=True),
+    )
+    hass.config_entries.async_get_entry = Mock(return_value=entry)
+    options = {"entry_id": "entry-1", "trigger_action": "food_log_created", "meal_type": "lunch"}
+    validated = await FoodLoggedTrigger.async_validate_config(hass, {CONF_OPTIONS: options})
+    trigger = FoodLoggedTrigger(hass, TriggerConfig(key="food_logged", options=validated[CONF_OPTIONS]))
+    received = asyncio.Event()
+    runner = Mock(side_effect=lambda *_args: received.set())
+    remove = await trigger.async_attach_runner(runner)
+    payload = {
+        "event_id": 101,
+        "trigger_action": "food_log_created",
+        "meal_type": "lunch",
+        "created_entries": [
+            {
+                "nutrition_source": "llm_estimate",
+                "estimate_confidence": "low",
+                "estimate_calories_low_kcal": 1250,
+                "estimate_calories_high_kcal": 1850,
+                "estimate_original_description": "Chicken curry, rice, and naan",
+            }
+        ],
+    }
+
+    async_dispatcher_send(hass, automation_event_signal("entry-1"), "meal_food_logged", payload)
+    await asyncio.wait_for(received.wait(), timeout=1)
+    remove()
+
+    assert runner.call_args.args[0]["event_id"] == 101
+
+
 async def test_trigger_rejects_server_without_capability(hass) -> None:
     """Triggers cannot attach to older contract generations."""
     entry = SimpleNamespace(
