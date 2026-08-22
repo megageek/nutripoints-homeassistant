@@ -57,14 +57,12 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[NutriBinarySensorDescription, ...] = (
     NutriBinarySensorDescription(
         key="points_low",
         translation_key="points_low",
-        icon="mdi:alert-circle-outline",
         device_class=BinarySensorDeviceClass.PROBLEM,
         evaluator=_is_points_low,
     ),
     NutriBinarySensorDescription(
         key="over_budget",
         translation_key="over_budget",
-        icon="mdi:alert-circle",
         device_class=BinarySensorDeviceClass.PROBLEM,
         evaluator=_is_over_budget,
     ),

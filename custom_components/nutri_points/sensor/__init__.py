@@ -23,7 +23,6 @@ SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
     NutriSensorDescription(
         key="remaining_points",
         translation_key="remaining_points",
-        icon="mdi:counter",
         source_key="remaining_points",
         native_unit_of_measurement="points",
         state_class=SensorStateClass.MEASUREMENT,
@@ -31,7 +30,6 @@ SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
     NutriSensorDescription(
         key="budget_points",
         translation_key="budget_points",
-        icon="mdi:target",
         source_key="budget_points",
         native_unit_of_measurement="points",
         state_class=SensorStateClass.MEASUREMENT,
@@ -39,7 +37,6 @@ SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
     NutriSensorDescription(
         key="food_points",
         translation_key="food_points",
-        icon="mdi:food-apple",
         source_key="food_points",
         native_unit_of_measurement="points",
         state_class=SensorStateClass.TOTAL,
@@ -47,7 +44,6 @@ SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
     NutriSensorDescription(
         key="activity_points",
         translation_key="activity_points",
-        icon="mdi:run",
         source_key="activity_points",
         native_unit_of_measurement="points",
         state_class=SensorStateClass.TOTAL,
@@ -55,7 +51,6 @@ SENSOR_DESCRIPTIONS: tuple[NutriSensorDescription, ...] = (
     NutriSensorDescription(
         key="total_drink_volume_ml",
         translation_key="total_drink_volume",
-        icon="mdi:cup-water",
         source_key="total_drink_volume_ml",
         native_unit_of_measurement=UnitOfVolume.MILLILITERS,
         state_class=SensorStateClass.TOTAL,
