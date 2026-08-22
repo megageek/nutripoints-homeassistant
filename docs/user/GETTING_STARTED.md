@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Home Assistant 2026.4 or newer
+- Home Assistant 2026.8 or newer
 - A reachable Nutri Points server
 - A Nutri Points API key
 - HACS for the recommended installation path

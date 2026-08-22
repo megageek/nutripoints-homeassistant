@@ -1,6 +1,6 @@
 # Nutri Points for Home Assistant
 
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.4%2B-blue.svg)](https://www.home-assistant.io/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8%2B-blue.svg)](https://www.home-assistant.io/)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 
 The official custom integration for a self-hosted [Nutri Points](https://github.com/megageek/nutripoints) server. It exposes nutrition, activity, drinks, weight, and readiness state to Home Assistant and provides replay-safe write actions for automations.
@@ -12,7 +12,7 @@ The official custom integration for a self-hosted [Nutri Points](https://github.
 3. In Nutri Points, create an API key under **Settings → API Keys**.
 4. Add the integration under **Settings → Devices & services** with the server URL and API key.
 
-Home Assistant 2026.4 or newer is required.
+Home Assistant 2026.8 or newer is required.
 
 When migrating from the component previously bundled in the Nutri Points server repository, remove only the old HACS repository/package before installing this one. Do not delete the existing Home Assistant config entry: the domain, stored settings, entity unique ids, and action names remain compatible.
 

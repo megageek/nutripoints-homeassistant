@@ -1,4 +1,31 @@
 {
+  "entity": {
+    "binary_sensor": {
+      "over_budget": {
+        "default": "mdi:alert-circle"
+      },
+      "points_low": {
+        "default": "mdi:alert-circle-outline"
+      }
+    },
+    "sensor": {
+      "activity_points": {
+        "default": "mdi:run"
+      },
+      "budget_points": {
+        "default": "mdi:target"
+      },
+      "food_points": {
+        "default": "mdi:food-apple"
+      },
+      "remaining_points": {
+        "default": "mdi:counter"
+      },
+      "total_drink_volume": {
+        "default": "mdi:cup-water"
+      }
+    }
+  },
   "triggers": {
     "food_logged": {
       "trigger": "mdi:food-apple"

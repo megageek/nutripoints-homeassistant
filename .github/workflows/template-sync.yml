@@ -20,21 +20,29 @@ on:
     - cron: "0 7 * * 1"
   workflow_dispatch:
 
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   template-sync:
+    name: Sync template updates
     # Skip when running inside the template repository itself
     if: github.repository != 'jpawlowski/hacs.integration_blueprint'
     runs-on: ubuntu-latest
+    environment: template-sync
     env:
       TEMPLATE_SYNC_TARGET_PAT: ${{ secrets.TEMPLATE_SYNC_TARGET_PAT }}
     permissions:
-      contents: write
-      pull-requests: write
-      repository-projects: read # required by is_force_push_pr (gh pr edit)
+      contents: write # Create and update template-sync branch commits.
+      pull-requests: write # Create and update the template-sync pull request.
+      repository-projects: read # Required by is_force_push_pr (gh pr edit).
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Use PAT when configured; otherwise fall back to github.token.
           # persist-credentials=false is recommended by actions-template-sync
@@ -62,7 +70,7 @@ jobs:
           fi
 
       - name: Sync from blueprint template
-        uses: AndreasAugustin/actions-template-sync@v2
+        uses: AndreasAugustin/actions-template-sync@5362c4f8ee36a9e356adf24b8abc5462550664b3 # v2
         with:
           # Needed only for changes in .github/workflows/*.yml.
           # Falls back to github.token for normal syncs.

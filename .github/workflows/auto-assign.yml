@@ -6,15 +6,21 @@ on:
     types:
       - opened
 
+permissions: {}
+
+concurrency:
+  group: auto-assign-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   auto-assign:
     name: Assign to owner
     runs-on: ubuntu-latest
     permissions:
-      issues: write
+      issues: write # Assign newly opened issues to the repository owner.
     steps:
       - name: Assign issue to owner
-        uses: actions/github-script@v9
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
             await github.rest.issues.addAssignees({

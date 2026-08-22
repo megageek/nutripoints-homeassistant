@@ -5,7 +5,7 @@ The integration has no third-party runtime dependency. It uses Home Assistant's
 
 Development dependencies are installed by `script/setup/bootstrap`:
 
-- Home Assistant 2026.4 and its test tooling
+- Home Assistant 2026.8 and its test tooling
 - `pytest-homeassistant-custom-component`
 - Ruff, Pyright, pre-commit, codespell, and Markdown tooling
 - `nutripoints-api-contracts`, built by Nutri Points and downloaded from the pinned,
