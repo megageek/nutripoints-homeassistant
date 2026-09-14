@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 DOMAIN = "nutri_points"
 PLATFORMS = ["sensor", "binary_sensor"]
 
@@ -32,38 +34,26 @@ WEIGHT_LOG_ENDPOINT = "/api/v1/logs/weight"
 STEPS_LOG_ENDPOINT = "/api/v1/logs/steps"
 WEIGHING_SESSIONS_ENDPOINT = "/api/v1/weighing-sessions"
 
-# Keep Home Assistant compatible with adjacent stable server generations so it can
-# talk to production while development moves forward.
-SUPPORTED_API_CONTRACT_TAGS = (
-    "stable-rw-v1",
-    "stable-rw-v2",
-    "stable-rw-v3",
-    "stable-rw-v4",
-    "stable-rw-v5",
-    "stable-rw-v6",
-    "stable-rw-v7",
-    "stable-rw-v8",
-    "stable-rw-v9",
-    "stable-rw-v10",
-    "stable-rw-v11",
-    "stable-rw-v12",
-    "stable-rw-v13",
-    "stable-rw-v14",
-    "stable-rw-v15",
-)
-IDENTITY_API_CONTRACT_TAGS = (
-    "stable-rw-v5",
-    "stable-rw-v6",
-    "stable-rw-v7",
-    "stable-rw-v8",
-    "stable-rw-v9",
-    "stable-rw-v10",
-    "stable-rw-v11",
-    "stable-rw-v12",
-    "stable-rw-v13",
-    "stable-rw-v14",
-    "stable-rw-v15",
-)
+# Contract generations are additive within the stable-rw family.  Runtime
+# validation therefore sets feature minimums instead of imposing a maximum
+# generation that must be updated for unrelated contract additions.
+API_CONTRACT_TAG_PATTERN = re.compile(r"stable-rw-v([1-9][0-9]*)$")
+MINIMUM_API_CONTRACT_GENERATION = 1
+IDENTITY_MINIMUM_API_CONTRACT_GENERATION = 5
+
+# This is the published-fixture matrix for development tests, not a runtime
+# compatibility ceiling. Keep it until the contract package exposes the matrix
+# directly to the test suite.
+SUPPORTED_API_CONTRACT_TAGS = tuple(f"stable-rw-v{generation}" for generation in range(1, 16))
+
+
+def api_contract_generation(contract_tag: str) -> int | None:
+    """Return a supported stable-rw contract generation, if present."""
+    match = API_CONTRACT_TAG_PATTERN.fullmatch(contract_tag)
+    if match is None:
+        return None
+    return int(match.group(1))
+
 
 IDENTITY_MISMATCH_ISSUE_SUFFIX = "server_identity_mismatch"
 

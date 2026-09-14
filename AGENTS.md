@@ -254,6 +254,19 @@ This integration uses the following identifiers consistently:
 - Individual entity classes in separate files (e.g., `air_quality.py`)
 - Use `EntityDescription` dataclasses for static entity metadata
 
+### Nutri Points API contract compatibility
+
+The `stable-rw-vN` API contract is additive within its major API version. Accept every valid contract generation the
+server reports; do not use a finite allowlist or reject a server merely because its generation is newer than the
+integration's tested fixtures.
+
+- Gate each optional feature by the minimum contract generation and/or advertised capability it actually requires.
+- Enable a feature when the connected server supports it, including on future additive generations.
+- Degrade cleanly when an older server lacks a feature: retain supported entities and actions, and avoid requesting
+  unsupported endpoints or payload fields.
+- Reject only malformed contract metadata, unsupported API major versions, or responses that fail a feature's explicit
+  compatibility requirements.
+
 **Code organization principles:**
 
 - Keep files focused (200-400 lines per file)

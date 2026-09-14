@@ -22,15 +22,16 @@ from custom_components.nutri_points.const import (
     DRINK_SETTINGS_ENDPOINT,
     FOOD_LOG_ENDPOINT,
     HA_EVENTS_ENDPOINT,
-    IDENTITY_API_CONTRACT_TAGS,
+    IDENTITY_MINIMUM_API_CONTRACT_GENERATION,
+    MINIMUM_API_CONTRACT_GENERATION,
     READINESS_ENDPOINT,
     RUNTIME_ENDPOINT,
     STEPS_LOG_ENDPOINT,
-    SUPPORTED_API_CONTRACT_TAGS,
     TODAY_ENDPOINT,
     WEIGHING_SESSIONS_ENDPOINT,
     WEIGHT_LOG_ENDPOINT,
     WEIGHT_OVERVIEW_ENDPOINT,
+    api_contract_generation,
 )
 
 
@@ -237,16 +238,18 @@ class NutriPointsApiClient:
             )
         contract_version = str(runtime.get("api_contract_version") or "")
         contract_tag = contract_version.rpartition(".")[2]
-        if contract_tag not in SUPPORTED_API_CONTRACT_TAGS:
-            expected = ", ".join(SUPPORTED_API_CONTRACT_TAGS)
+        generation = api_contract_generation(contract_tag)
+        if generation is None or generation < MINIMUM_API_CONTRACT_GENERATION:
             raise NutriPointsContractError(
                 "Nutri Points API contract is incompatible. "
-                f"Expected one of [{expected}] in api_contract_version, got '{contract_version}'."
+                "Expected a stable-rw-vN contract generation (N >= "
+                f"{MINIMUM_API_CONTRACT_GENERATION}) in api_contract_version, got '{contract_version}'."
             )
         server_uuid = _canonical_uuid4(runtime.get("server_uuid"))
-        if contract_tag in IDENTITY_API_CONTRACT_TAGS and server_uuid is None:
+        if generation >= IDENTITY_MINIMUM_API_CONTRACT_GENERATION and server_uuid is None:
             raise NutriPointsContractError(
-                "Nutri Points stable-rw-v5 and newer runtime metadata must include a canonical UUIDv4 server_uuid."
+                "Nutri Points API contract is incompatible: stable-rw-v5 and newer runtime metadata must include "
+                "a canonical UUIDv4 server_uuid."
             )
         return cast(
             NutriPointsRuntimeMetadata,

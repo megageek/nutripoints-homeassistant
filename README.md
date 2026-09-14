@@ -30,10 +30,10 @@ When migrating from the component previously bundled in the Nutri Points server 
   the `nutri_points` domain.
 - Creates one Nutri Points device with translated entities and downloadable, credential-redacted diagnostics.
 
-The integration supports Nutri Points contract generations `stable-rw-v1` through `stable-rw-v15`. Unknown
-generations are rejected during setup so incompatible data cannot silently reach automations. Food-weighing
-sessions require `stable-rw-v7` and the `ha_food_weighing_sessions_v1` capability; older servers continue to
-provide their existing entities and actions.
+The integration accepts additive Nutri Points contract generations in the `stable-rw-vN` family from v1 onward.
+Runtime features declare their own minimum generation instead of requiring an integration update for every contract
+bump. Food-weighing sessions require `stable-rw-v7` and the `ha_food_weighing_sessions_v1` capability; older
+servers continue to provide their existing entities and actions.
 
 One Nutri Points server can be configured per Home Assistant installation. Connection settings can be changed with **Reconfigure**, while polling and threshold settings remain under **Options**. Home Assistant starts **Reconfigure authentication** automatically if the API key expires.
 
