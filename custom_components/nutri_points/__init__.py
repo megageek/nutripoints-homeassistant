@@ -36,17 +36,12 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """Initialize domain-level integration state."""
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN]["logger"] = _LOGGER
     async_setup_services(hass)
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: NutriPointsConfigEntry) -> bool:
     """Set up a Nutri Points config entry."""
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN]["logger"] = _LOGGER
-
     api_client = NutriPointsApiClient(
         session=async_get_clientsession(hass),
         base_url=entry.data[CONF_BASE_URL],

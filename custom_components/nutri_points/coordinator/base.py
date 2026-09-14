@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 import logging
 from typing import Any
 
@@ -16,6 +16,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util.dt import utcnow
 
 from .identity import NutriPointsIdentityGuard
 
@@ -68,7 +69,7 @@ class NutriPointsDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     def _utc_now_iso(self) -> str:
-        return datetime.now(UTC).isoformat()
+        return utcnow().isoformat()
 
     def mark_stream_connecting(self) -> None:
         self.stream_status = "connecting"

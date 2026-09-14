@@ -30,7 +30,8 @@ class NutriPointsIdentityGuard:
         if self._unload_requested:
             return
         self._unload_requested = True
-        self._hass.async_create_task(
+        self._entry.async_create_task(
+            self._hass,
             self._hass.config_entries.async_unload(self._entry.entry_id),
             "unload Nutri Points after server identity mismatch",
         )

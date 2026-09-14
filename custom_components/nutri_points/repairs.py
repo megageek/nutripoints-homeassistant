@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -12,6 +11,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.util.dt import utcnow
 
 from .api import (
     NutriPointsApiClient,
@@ -110,7 +110,7 @@ class NutriPointsRuntimeIssueTracker:
         self.active_issue_id: str | None = None
 
     def _utc_now_iso(self) -> str:
-        return datetime.now(UTC).isoformat()
+        return utcnow().isoformat()
 
     def _incompatible_contract_issue_id(self) -> str:
         return f"{self._entry_id}_runtime_{RUNTIME_FAILURE_INCOMPATIBLE_CONTRACT}"
