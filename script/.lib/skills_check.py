@@ -166,8 +166,6 @@ def check_identifiers(path: Path, report: Report) -> None:
 def check_links(path: Path, report: Report) -> None:
     """Verify that every relative markdown link resolves to an existing file."""
     for target in LINK_PATTERN.findall(path.read_text()):
-        if _is_initialized_integration() and target.startswith("blueprint-skill-maintenance/"):
-            continue
         resolved = (path.parent / target.split("#", 1)[0]).resolve()
         if not resolved.exists():
             report.error(f"{path} links to a missing file: {target}")
@@ -311,22 +309,9 @@ def _pointer_files() -> list[Path]:
 
 def _required_catalogue_files() -> tuple[Path, ...]:
     """Return catalogues that can receive the same update as synchronized skills."""
-    if not _is_initialized_integration():
+    if Path("initialize.sh").is_file():
         return (SKILLS_CATALOGUE, AGENTS_CATALOGUE)
     return (SKILLS_CATALOGUE,)
-
-
-def _is_initialized_integration() -> bool:
-    """Return whether this repository is an initialized integration."""
-    if not ROLE_FILE.is_file():
-        return not Path("initialize.sh").is_file()
-
-    text = ROLE_FILE.read_text()
-    try:
-        role = text.split(ROLE_MARKER_START, 1)[1].split(ROLE_MARKER_END, 1)[0]
-    except IndexError:
-        return not Path("initialize.sh").is_file()
-    return "initialized" in role.lower() or not Path("initialize.sh").is_file()
 
 
 def check_pointer_links() -> list[Report]:
@@ -390,8 +375,6 @@ def main() -> int:
         return 0
 
     skill_dirs = sorted(d for d in SKILLS_DIR.iterdir() if d.is_dir() and not d.name.startswith("."))
-    if _is_initialized_integration():
-        skill_dirs = [d for d in skill_dirs if d.name != "blueprint-skill-maintenance"]
     if not skill_dirs:
         print(f"No skills found in {SKILLS_DIR}/.")
         return 0
