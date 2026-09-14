@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.4](https://github.com/megageek/nutripoints-homeassistant/compare/v0.5.3...v0.5.4) (2026-09-14)
+
+
+### Bug Fixes
+
+* **api:** accept additive contract generations ([e858f47](https://github.com/megageek/nutripoints-homeassistant/commit/e858f47c80d4160f30a149494034ed131f521b8e))
+
 ## [0.5.3](https://github.com/megageek/nutripoints-homeassistant/compare/v0.5.2...v0.5.3) (2026-09-14)
 
 
