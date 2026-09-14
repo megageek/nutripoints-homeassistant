@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.3](https://github.com/megageek/nutripoints-homeassistant/compare/v0.5.2...v0.5.3) (2026-09-14)
+
+
+### Bug Fixes
+
+* **api:** support stable-rw-v15 contract ([f75356f](https://github.com/megageek/nutripoints-homeassistant/commit/f75356f446ccf4c7c0f901d339019babbb4db614))
+
 ## [0.5.2](https://github.com/megageek/nutripoints-homeassistant/compare/v0.5.1...v0.5.2) (2026-09-14)
 
 
